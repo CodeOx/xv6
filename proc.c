@@ -542,7 +542,7 @@ ps(void)
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == RUNNABLE || p->state == RUNNING)
+    if(p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING)
       cprintf("pid:%d name:%s\n", p->pid, p->name);
 
   release(&ptable.lock);
