@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int print_count(void);
 int toggle(void);
+int add(int input1, int input2);
 
 // ulib.c
 int stat(const char*, struct stat*);

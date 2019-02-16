@@ -10,29 +10,29 @@ int syscall_count[N_MAXSYSCALLS];  //used in syscall.c
 char*
 syscall_name(int num){
   switch(num){
-    case 1: return (char*) "SYS_fork";
-    case 2: return (char*) "SYS_exit";
-    case 3: return (char*) "SYS_wait";
-    case 4: return (char*) "SYS_pipe";
-    case 5: return (char*) "SYS_read";
-    case 6: return (char*) "SYS_kill";
-    case 7: return (char*) "SYS_exec";
-    case 8: return (char*) "SYS_fstat";
-    case 9: return (char*) "SYS_chdir";
-    case 10: return (char*) "SYS_dup";
-    case 11: return (char*) "SYS_getpid";
-    case 12: return (char*) "SYS_sbrk";
-    case 13: return (char*) "SYS_sleep";
-    case 14: return (char*) "SYS_uptime";
-    case 15: return (char*) "SYS_open";
-    case 16: return (char*) "SYS_write";
-    case 17: return (char*) "SYS_mknod";
-    case 18: return (char*) "SYS_unlink";
-    case 19: return (char*) "SYS_link";
-    case 20: return (char*) "SYS_mkdir";
-    case 21: return (char*) "SYS_close";
-    case 22: return (char*) "SYS_print_count";
-	case 23: return (char*) "SYS_toggle";
+    case 1: return (char*) "sys_fork";
+    case 2: return (char*) "sys_exit";
+    case 3: return (char*) "sys_wait";
+    case 4: return (char*) "sys_pipe";
+    case 5: return (char*) "sys_read";
+    case 6: return (char*) "sys_kill";
+    case 7: return (char*) "sys_exec";
+    case 8: return (char*) "sys_fstat";
+    case 9: return (char*) "sys_chdir";
+    case 10: return (char*) "sys_dup";
+    case 11: return (char*) "sys_getpid";
+    case 12: return (char*) "sys_sbrk";
+    case 13: return (char*) "sys_sleep";
+    case 14: return (char*) "sys_uptime";
+    case 15: return (char*) "sys_open";
+    case 16: return (char*) "sys_write";
+    case 17: return (char*) "sys_mknod";
+    case 18: return (char*) "sys_unlink";
+    case 19: return (char*) "sys_link";
+    case 20: return (char*) "sys_mkdir";
+    case 21: return (char*) "sys_close";
+    case 22: return (char*) "sys_print_count";
+	case 23: return (char*) "sys_toggle";
     default: return (char*)"unknown sys call";
   }
 
@@ -56,6 +56,11 @@ sys_toggle(void)
 	  	syscall_count[i] = 0;
 	  }
   }
-  cprintf("sys_toggle !!!\n");
   return 0;
+}
+
+int 
+sys_add(int input1, int input2)
+{
+	return input1 + input2;
 }

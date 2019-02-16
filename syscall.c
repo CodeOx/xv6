@@ -105,6 +105,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_print_count(void);
 extern int sys_toggle(void);
+extern int sys_add(int input1, int input2);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -148,7 +149,9 @@ syscall(void)
   }
 
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    curproc->tf->eax = syscalls[num]();
+      curproc->tf->eax = syscalls[num]();
+  } else if(num == 24) {
+      curproc->tf->eax = sys_add(1,2);
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             curproc->pid, curproc->name, num);
