@@ -532,3 +532,19 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+//lists all currently running processes
+int
+ps(void)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if(p->state == RUNNABLE || p->state == RUNNING)
+      cprintf("pid:%d name:%s\n", p->pid, p->name);
+
+  release(&ptable.lock);
+  return 0;
+}

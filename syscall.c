@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 extern int sys_print_count(void);
 extern int sys_toggle(void);
 extern int sys_add(void);
+extern int sys_ps(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -132,6 +133,7 @@ static int (*syscalls[])(void) = {
 [SYS_print_count] sys_print_count,
 [SYS_toggle] sys_toggle,
 [SYS_add] sys_add,
+[SYS_ps] sys_ps,
 };
 
 extern int syscall_count[];
