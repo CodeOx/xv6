@@ -132,34 +132,8 @@ static int (*syscalls[])(void) = {
 [SYS_toggle] sys_toggle,
 };
 
-char*
-syscall_name(int num){
-  switch(num){
-    case 1: return (char*) "SYS_fork";
-    case 2: return (char*) "SYS_exit";
-    case 3: return (char*) "SYS_wait";
-    case 4: return (char*) "SYS_pipe";
-    case 5: return (char*) "SYS_read";
-    case 6: return (char*) "SYS_kill";
-    case 7: return (char*) "SYS_exec";
-    case 8: return (char*) "SYS_fstat";
-    case 9: return (char*) "SYS_chdir";
-    case 10: return (char*) "SYS_dup";
-    case 11: return (char*) "SYS_getpid";
-    case 12: return (char*) "SYS_sbrk";
-    case 13: return (char*) "SYS_sleep";
-    case 14: return (char*) "SYS_uptime";
-    case 15: return (char*) "SYS_open";
-    case 16: return (char*) "SYS_write";
-    case 17: return (char*) "SYS_mknod";
-    case 18: return (char*) "SYS_unlink";
-    case 19: return (char*) "SYS_link";
-    case 20: return (char*) "SYS_mkdir";
-    case 21: return (char*) "SYS_close";
-    default: return (char*)"unknown sys call";
-  }
-
-}
+extern int syscall_count[];
+extern int trace_on;
 
 void
 syscall(void)
@@ -169,8 +143,9 @@ syscall(void)
 
   num = curproc->tf->eax;
   
-  //Lab1 : Syscall Trace
-  //cprintf("here\n");
+  if(trace_on){
+    syscall_count[num]++;
+  }
 
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
