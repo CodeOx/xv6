@@ -15,6 +15,7 @@ OBJS = \
 	picirq.o\
 	pipe.o\
 	proc.o\
+	sysnew.o\
 	sleeplock.o\
 	spinlock.o\
 	string.o\
@@ -27,7 +28,6 @@ OBJS = \
 	uart.o\
 	vectors.o\
 	vm.o\
-	sysnew.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf

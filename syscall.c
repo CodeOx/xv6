@@ -168,7 +168,7 @@ syscall(void)
   num = curproc->tf->eax;
   
   //Lab1 : Syscall Trace
-  cprintf("%s count\n",syscall_name(num));
+  //cprintf("here\n");
 
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
