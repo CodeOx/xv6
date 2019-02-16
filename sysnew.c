@@ -60,7 +60,12 @@ sys_toggle(void)
 }
 
 int 
-sys_add(int input1, int input2)
+sys_add(void)
 {
+	int input1, input2;
+	if(argint(0, &input1) < 0)
+		return -1;
+	if(argint(1, &input2) < 0)
+		return -1;
 	return input1 + input2;
 }
