@@ -141,6 +141,9 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
+  p->qhead = -1;
+  p->qtail = -1;
+  p->rec_busy = 0;
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -199,6 +202,9 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  np->qtail = -1;
+  np->qhead = -1;
+  np->rec_busy = 0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -546,5 +552,60 @@ ps(void)
       cprintf("pid:%d name:%s\n", p->pid, p->name);
 
   release(&ptable.lock);
+  return 0;
+}
+
+//send unicast message
+int
+send(void)
+{
+  int sender_pid, rec_pid;
+  char* msg;
+  if(argint(0, &sender_pid) < 0 || argint(1, &rec_pid) < 0 || argstr(2, &msg) < 0)
+    return -1;    //cannot read arguments
+
+  cprintf("send :%s pid:%d %d\n", msg,sender_pid,rec_pid);
+
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  p = &ptable.proc[sender_pid]; 
+  if(p->state == UNUSED){
+    release(&ptable.lock);
+    return -2;    //invalid sender_id
+  }
+  p = &ptable.proc[rec_pid]; 
+  if(p->state == UNUSED){
+    release(&ptable.lock);
+    return -3;    //invalid rec_id
+  }
+
+  if((p->qtail + 1)%MAX_Q_LEN == p->qhead){
+    release(&ptable.lock);
+    return -4;    //message queue full
+  }  
+
+  if(p->qhead == -1 && p->qtail == -1){
+    p->qhead = 0;
+    p->qtail = 0;
+  } else {
+    p->qtail = (p->qtail + 1)%MAX_Q_LEN;
+  }
+
+  safestrcpy(p->msgq[p->qtail], msg, sizeof(msg));
+
+  release(&ptable.lock);
+
+  cprintf("sent\n");
+
+  return 0;
+}
+
+//recieve unicast message
+int
+recv(void)
+{
+  cprintf("recv \n");
   return 0;
 }

@@ -95,3 +95,15 @@ sys_ps(void)
 {
   return ps();
 }
+
+int
+sys_send(void)
+{
+  return send();
+}
+
+int
+sys_recv(void)
+{
+  return recv();
+}

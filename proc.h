@@ -1,3 +1,6 @@
+#define MSGSIZE 8
+#define MAX_Q_LEN 20
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -49,6 +52,9 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  char msgq[MAX_Q_LEN][MSGSIZE];// Message queue (not copied during fork, child process starts with empty queue)
+  int qhead, qtail;             // Queue head and tail
+  int rec_busy;                 // Process waiting for message
 };
 
 // Process memory is laid out contiguously, low addresses first:
