@@ -573,15 +573,18 @@ send(void)
   p = &ptable.proc[sender_pid]; 
   if(p->state == UNUSED){
     release(&ptable.lock);
+    cprintf("send: invalid sender id\n");
     return -2;    //invalid sender_id
   }
   p = &ptable.proc[rec_pid]; 
   if(p->state == UNUSED){
+    cprintf("send: invalid receiver id\n");
     release(&ptable.lock);
     return -3;    //invalid rec_id
   }
 
   if((p->qtail + 1)%MAX_Q_LEN == p->qhead){
+    cprintf("send: message queue full\n");
     release(&ptable.lock);
     return -4;    //message queue full
   }  
@@ -597,7 +600,7 @@ send(void)
 
   release(&ptable.lock);
 
-  cprintf("sent\n");
+  cprintf("sent: %s\n", p->msgq[p->qtail]);
 
   return 0;
 }
@@ -606,6 +609,21 @@ send(void)
 int
 recv(void)
 {
+  struct proc *p = myproc();
+
+  acquire(&ptable.lock);
+
+  if(p->qhead == -1 && p->qtail == -1){
+    
+  } else if(p->qhead == p->qtail){
+    p->qtail = -1;
+    p->qhead = -1;
+  } else {
+    p->qhead = (p->qhead + 1)%MAX_Q_LEN;
+  }
+
+  release(&ptable.lock);
+
   cprintf("recv \n");
   return 0;
 }
