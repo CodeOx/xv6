@@ -564,26 +564,31 @@ send(void)
   if(argint(0, &sender_pid) < 0 || argint(1, &rec_pid) < 0 || argstr(2, &msg) < 0)
     return -1;    //cannot read arguments
 
-  cprintf("send :%s pid:%d %d\n", msg,sender_pid,rec_pid);
+  //cprintf("send :%s pid:%d %d\n", msg,sender_pid,rec_pid);
 
-  struct proc *sender;
-  struct proc *p;
+  struct proc *p = 0;
+  struct proc *temp;
 
   acquire(&ptable.lock);
 
-  sender = &ptable.proc[sender_pid-1]; 
-  cprintf("sender name: %s id: %d\n", sender->name, sender->pid);
-  if(sender->state == UNUSED){
-    release(&ptable.lock);
-    cprintf("send: invalid sender id\n");
-    return -2;    //invalid sender_id
+  for(temp = ptable.proc; temp < &ptable.proc[NPROC]; temp++){
+    if(temp->pid == sender_pid && temp->state == UNUSED){
+      release(&ptable.lock);
+      cprintf("send: invalid sender id\n");
+      return -2;    //invalid sender_id
+    }
+    if(temp->pid == rec_pid){
+      if(temp->state == UNUSED){
+        release(&ptable.lock);
+        cprintf("send: invalid receiver id\n");
+        return -3;    //invalid rec_id
+      }
+      p = temp;
+    }
   }
-  cprintf("recid: %d", rec_pid);
-  p = &ptable.proc[rec_pid-1]; 
-  cprintf("rec name: %s id: %d\n", p->name, p->pid);
-  if(p->state == UNUSED){
-    cprintf("send: invalid receiver id\n");
+  if(p == 0){
     release(&ptable.lock);
+    cprintf("send: invalid receiver id\n");
     return -3;    //invalid rec_id
   }
 
@@ -623,8 +628,7 @@ recv(void)
 
   while(p->qhead == -1 && p->qtail == -1){
     sleep(p, &ptable.lock);   //wait for sender
-  } 
-  cprintf("recv: non-empty queue\n");
+  }
   if(p->qhead == p->qtail){
     safestrcpy(msg, p->msgq[p->qhead], sizeof(p->msgq[p->qhead]));
     p->qtail = -1;
