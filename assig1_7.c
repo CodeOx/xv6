@@ -27,7 +27,6 @@ int main(void)
 		printf(1,"1 PARENT: msg sent is: %s \n", msg_child );
 		
 		free(msg_child);
-		wait();
 	}
 	
 	exit();
