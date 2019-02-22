@@ -694,8 +694,12 @@ send_multi(void)
 //set signal handler
 int set_handle(void)
 {
-  cprintf("set handle caled\n");
+  cprintf("set handle called\n");
   struct proc *curproc = myproc();
+  void (*handle)();
+  if(argptr(0, (void*)&handle, sizeof(handle)) < 0)
+    return -1;    //cannot read arguments
+  curproc->sig_handle = handle;
   curproc->sig_handle_set = 1;
   return 0;
 }

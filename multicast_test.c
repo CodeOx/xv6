@@ -5,13 +5,12 @@
 #define MSGSIZE 8
 
 void test(){
+	printf(1, "inside signal handler\n");
 	return;
 }
 
 int main(void)
 {
-	printf(1,"%s\n","IPC Test case");
-	
 	int cid = fork();
 	if(cid==0){
 		// This is child
@@ -55,6 +54,8 @@ int main(void)
 		
 		free(parid);
 		free(temp);
+
+		wait();
 	}
 	
 	exit();

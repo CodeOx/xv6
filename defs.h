@@ -124,6 +124,7 @@ int 			ps(void);
 int 			send(void);
 int 			recv(void);
 int 			send_multi(void);
+int 			set_handle(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
