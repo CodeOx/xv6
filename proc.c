@@ -649,6 +649,7 @@ send_signal(int sender_pid, char* msg, struct proc* p)
 {
   if(p->sig_handle_set){
     // call signal handler
+    cprintf("signal handler is set\n");
   }
   return 0;
 }
@@ -687,5 +688,14 @@ send_multi(void)
 
   cprintf("send_multi :%s pid:%d %d\n", msg,sender_pid,rec_list[0]);
 
+  return 0;
+}
+
+//set signal handler
+int set_handle(void)
+{
+  cprintf("set handle caled\n");
+  struct proc *curproc = myproc();
+  curproc->sig_handle_set = 1;
   return 0;
 }

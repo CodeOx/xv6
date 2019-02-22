@@ -117,5 +117,5 @@ sys_send_multi(void)
 int
 sys_set_handle(void)
 {
-  return 0;
+  return set_handle();
 }
