@@ -29,6 +29,7 @@ int add(int input1, int input2);
 int ps(void);
 int send(int sender_pid, int rec_pid, void *msg);
 int recv(void *msg);
+int send_multi( int sender_pid, int rec_pids[], void* msg, int lenght);
 
 // ulib.c
 int stat(const char*, struct stat*);

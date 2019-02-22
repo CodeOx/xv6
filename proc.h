@@ -55,6 +55,7 @@ struct proc {
   char msgq[MAX_Q_LEN][MSGSIZE];// Message queue (not copied during fork, child process starts with empty queue)
   int qhead, qtail;             // Queue head and tail
   int rec_busy;                 // Process waiting for message
+  int sig_handle_set;           // Is the signal handler set
 };
 
 // Process memory is laid out contiguously, low addresses first:

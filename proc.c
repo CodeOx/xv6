@@ -144,6 +144,7 @@ userinit(void)
   p->qhead = -1;
   p->qtail = -1;
   p->rec_busy = 0;
+  p->sig_handle_set = 0;
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -205,6 +206,7 @@ fork(void)
   np->qtail = -1;
   np->qhead = -1;
   np->rec_busy = 0;
+  np->sig_handle_set = 0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -639,5 +641,51 @@ recv(void)
   }
 
   release(&ptable.lock);
+  return 0;
+}
+
+int 
+send_signal(int sender_pid, char* msg, struct proc* p)
+{
+  if(p->sig_handle_set){
+    // call signal handler
+  }
+  return 0;
+}
+
+//send multicast message
+int
+send_multi(void)
+{
+  int sender_pid;
+  int length;
+  char* rec_pids;
+  char* msg;
+  if(argint(0, &sender_pid) < 0 || argstr(1, &rec_pids) < 0 || argstr(2, &msg) < 0 || argint(3, &length) < 0)
+    return -1;    //cannot read arguments
+
+  int* rec_list = (int*)rec_pids;
+
+  struct proc *p;
+
+  acquire(&ptable.lock);
+
+  for(int i = 0; i < length; i++){
+    int rec_pid = rec_list[i];
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid == rec_pid){
+        if(p->state == UNUSED){
+          //invalid receiver id (Handle?)
+        } else{
+          send_signal(sender_pid, msg, p);
+        }
+      }
+    }
+  }
+
+  release(&ptable.lock);
+
+  cprintf("send_multi :%s pid:%d %d\n", msg,sender_pid,rec_list[0]);
+
   return 0;
 }

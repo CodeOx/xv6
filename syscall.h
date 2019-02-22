@@ -26,3 +26,4 @@
 #define SYS_ps 25
 #define SYS_send 26
 #define SYS_recv 27
+#define SYS_send_multi 28

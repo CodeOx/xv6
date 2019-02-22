@@ -123,6 +123,7 @@ void            yield(void);
 int 			ps(void);
 int 			send(void);
 int 			recv(void);
+int 			send_multi(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

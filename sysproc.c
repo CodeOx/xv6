@@ -107,3 +107,9 @@ sys_recv(void)
 {
   return recv();
 }
+
+int
+sys_send_multi(void)
+{
+  return send_multi();
+}
