@@ -113,3 +113,9 @@ sys_send_multi(void)
 {
   return send_multi();
 }
+
+int
+sys_set_handle(void)
+{
+  return 0;
+}

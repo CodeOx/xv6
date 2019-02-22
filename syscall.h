@@ -27,3 +27,4 @@
 #define SYS_send 26
 #define SYS_recv 27
 #define SYS_send_multi 28
+#define SYS_set_handle 29
