@@ -5,7 +5,7 @@
 #define MSGSIZE 8
 
 void test(){
-	printf(1, "inside signal handler\n");
+	printf(1, "*****inside signal handler\n");
 	return;
 }
 
@@ -33,6 +33,8 @@ int main(void)
 
 	}else{
 		// This is parent
+		printf(1,"handle ptrorig: %x\n", test);
+		printf(1,"value handle ptrorig: %x\n", *test);
 		/***** rendezvous via handshake ******/
 		/* sending its pid to child */
 		int *parid = (int*)malloc(MSGSIZE);
@@ -50,7 +52,6 @@ int main(void)
 		int a[1];
 		a[0] = cid;
 		send_multi(getpid(),a,msg_child,1);		
-		//printf(1,"1 PARENT: msg sent is: %s \n", msg_child );
 		
 		free(parid);
 		free(temp);

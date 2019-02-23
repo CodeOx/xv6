@@ -129,6 +129,9 @@ int 			set_handle(void);
 // swtch.S
 void            swtch(struct context**, struct context*);
 
+// swtch_handle.S
+void            swtch_handle(struct context**, struct context*);
+
 // spinlock.c
 void            acquire(struct spinlock*);
 void            getcallerpcs(void*, uint*);
