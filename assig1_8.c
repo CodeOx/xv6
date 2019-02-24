@@ -56,18 +56,64 @@ main(int argc, char *argv[])
 			int* msg = (int*)malloc(sizeof(int));
 			*msg = par_sum;
 			send(getpid(),par_id,msg);
-			
 			free(msg);
+			
+			if(type == 1){
+				//rendezvous here before continuing
+				char* temp = (char*)malloc(MSGSIZE);
+				recv(temp);
+				free(temp);
+
+				float* mean = (float*)malloc(sizeof(float));
+				*mean = 4;
+
+				//float* sum_sq = (float*)malloc(sizeof(float));
+				int* sum_sq = (int*)malloc(sizeof(int));
+				for(int j = start; j <= end; j++)
+					*sum_sq += (arr[j] - *mean) * (arr[j] - *mean);
+
+				printf(1, "sent: %d\n", *sum_sq);
+				send(getpid(),par_id,sum_sq);	
+				
+				free(mean);
+				free(sum_sq);
+			}
+
 			exit();
 		}
   	}
 
+  	int *msg = (int*)malloc(sizeof(int));
   	for(int i = 0; i < num_child; i++){
-  		int *msg = (int*)malloc(sizeof(int));
 		recv(msg);
 		tot_sum += msg[0];
-		free(msg);
   	}
+  	free(msg);
+
+  	//multicast variance : only for type 1
+  	if(type==1){
+  		//rendezvoud message to all children (via unicast since blocking is required)
+  		char* temp = (char*)malloc(1);
+  		temp = "R";
+  		for(int i = 0; i < num_child; i++){
+  			printf(1, "cid: %d\n", cid[i]);
+  			send(par_id, cid[i], temp);
+  		}
+
+	  	//float mean = ((float)tot_sum)/size;
+	  	
+	  	int *msg = (int*)malloc(sizeof(int));
+	  	for(int i = 0; i < num_child; i++){
+			recv(msg);
+			printf(1, "received: %d\n", *msg);
+			variance += msg[0];
+	  	}
+
+	  	free(temp);
+	  	free(msg);
+	}
+
+	variance /= size;
 
   	for(int i = 0; i < num_child; i++){
   		wait();
