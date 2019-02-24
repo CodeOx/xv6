@@ -6,12 +6,12 @@ volatile int num;
 struct spinlock lock;
 
 //signal handler
-//calling other funcions doesn't work inside signal handler (why?)
+//calling other funcions doesn't work inside signal handler (why? or maybe just printf doesn't work?)
 void test(){
 	printf(1, "*****inside signal handler\n");
-	acquire(&lock, 1);
+	//acquire(&lock, 1);
 	num = 9;
-	release(&lock, 1);
+	//release(&lock, 1);
 	return;
 }
 
@@ -82,12 +82,11 @@ int main(void)
 		printf(1, "parent: handshake done\n");
 
 		/* now do stuff */
-		//char *msg_child = (char *)malloc(MSGSIZE);
-		//msg_child = "P";
-		//int a[1];
-		//a[0] = cid;
-		//send_multi(getpid(),a,msg_child,1);		
-		test();
+		char *msg_child = (char *)malloc(MSGSIZE);
+		msg_child = "P";
+		int a[1];
+		a[0] = cid;
+		send_multi(getpid(),a,msg_child,1);		
 		
 		free(parid);
 		free(temp);

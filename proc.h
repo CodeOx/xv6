@@ -57,6 +57,7 @@ struct proc {
   int rec_busy;                 // Process waiting for message
   int sig_handle_set;           // Is the signal handler set
   void (*sig_handle)();         //signal handler
+  int sig_received;             // Does the process receive a signal
 };
 
 // Process memory is laid out contiguously, low addresses first:

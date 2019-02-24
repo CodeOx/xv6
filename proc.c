@@ -145,6 +145,7 @@ userinit(void)
   p->qtail = -1;
   p->rec_busy = 0;
   p->sig_handle_set = 0;
+  p->sig_received = 0;
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -207,6 +208,7 @@ fork(void)
   np->qhead = -1;
   np->rec_busy = 0;
   np->sig_handle_set = 0;
+  np->sig_received = 0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -350,6 +352,13 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+
+      if(p->sig_handle_set && p->sig_received){
+        cprintf("signal handler called\n");
+        p->sig_handle();
+        cprintf("signal handler returned\n");
+        p->sig_received = 0;
+      }
 
       swtch(&(c->scheduler), p->context);
 
@@ -649,18 +658,7 @@ int
 send_signal(int sender_pid, char* msg, struct proc* p)
 {
   if(p->sig_handle_set){
-    cprintf("signal handler called\n");
-    //switch to user page table
-    switchuvm(p);
-    //block interrupts
-    pushcli();
-    // call signal handler
-    p->sig_handle();
-    //unblock interrupts
-    popcli();
-    //switch to kernel page table
-    switchkvm();
-    cprintf("signal handler returned\n");
+    p->sig_received = 1;
   }
   return 0;
 }
