@@ -86,13 +86,13 @@ main(int argc, char *argv[])
 				float* mean = (float*)malloc(sizeof(float));
 				*mean = *(float*)msgShared;
 
-				//float* sum_sq = (float*)malloc(sizeof(float));
-				int* sum_sq = (int*)malloc(sizeof(int));
+				float* sum_sq = (float*)malloc(sizeof(float));
+				//int* sum_sq = (int*)malloc(sizeof(int));
 				for(int j = start; j <= end; j++)
-					*sum_sq += (arr[j] - *mean) * (arr[j] - *mean);
+					*sum_sq += ((float)arr[j] - *mean) * ((float)arr[j] - *mean);
 
-				//printf(1, "sent: %d\n", *sum_sq);
-				send(getpid(),par_id,sum_sq);	
+				//printf(1, "sent: %d\n", (int)*sum_sq);
+				send(getpid(),par_id,(char*)sum_sq);	
 				
 				free(mean);
 				free(sum_sq);
@@ -116,11 +116,11 @@ main(int argc, char *argv[])
 	  	*mean = tot_sum/size;
 		send_multi(par_id,cid,(char*)mean,num_child);	
 
-	  	int *msg = (int*)malloc(sizeof(int));
+	  	char *msg = (char*)malloc(sizeof(int));
 	  	for(int i = 0; i < num_child; i++){
 			recv(msg);
-			//printf(1, "received: %d\n", *msg);
-			variance += msg[0];
+			//printf(1, "received: %d\n", (int)*(float*)msg);
+			variance += *(float*)msg;
 	  	}
 
 	  	free(mean);

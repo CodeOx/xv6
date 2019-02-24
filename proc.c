@@ -575,7 +575,7 @@ send(void)
 {
   int sender_pid, rec_pid;
   char* msg;
-  if(argint(0, &sender_pid) < 0 || argint(1, &rec_pid) < 0 || argstr(2, &msg) < 0)
+  if(argint(0, &sender_pid) < 0 || argint(1, &rec_pid) < 0 || argptr(2, &msg, MSGSIZE) < 0)
     return -1;    //cannot read arguments
 
   //cprintf("send :%s pid:%d %d\n", msg,sender_pid,rec_pid);
@@ -619,7 +619,7 @@ send(void)
     p->qtail = (p->qtail + 1)%MAX_Q_LEN;
   }
 
-  safestrcpy(p->msgq[p->qtail], msg, sizeof(msg));
+  memmove(p->msgq[p->qtail], msg, MSGSIZE);
 
   // reciever might be waiting
   wakeup1(p);
@@ -644,11 +644,11 @@ recv(void)
     sleep(p, &ptable.lock);   //wait for sender
   }
   if(p->qhead == p->qtail){
-    safestrcpy(msg, p->msgq[p->qhead], sizeof(p->msgq[p->qhead]));
+    memmove(msg, p->msgq[p->qhead], MSGSIZE);
     p->qtail = -1;
     p->qhead = -1;
   } else {
-    safestrcpy(msg, p->msgq[p->qhead], sizeof(p->msgq[p->qhead]));
+    memmove(msg, p->msgq[p->qhead], MSGSIZE);
     p->qhead = (p->qhead + 1)%MAX_Q_LEN;
   }
 
