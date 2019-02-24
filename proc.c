@@ -649,6 +649,7 @@ int
 send_signal(int sender_pid, char* msg, struct proc* p)
 {
   if(p->sig_handle_set){
+    cprintf("signal handler called\n");
     //switch to user page table
     switchuvm(p);
     //block interrupts
@@ -659,7 +660,7 @@ send_signal(int sender_pid, char* msg, struct proc* p)
     popcli();
     //switch to kernel page table
     switchkvm();
-    cprintf("signal handler called\n");
+    cprintf("signal handler returned\n");
   }
   return 0;
 }

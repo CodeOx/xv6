@@ -21,12 +21,10 @@ struct spinlock {
 
   // For debugging:
   char *name;        // Name of lock.
-  struct cpu *cpu;   // The cpu holding the lock.
-  uint pcs[10];      // The call stack (an array of program counters)
-                     // that locked the lock.
+  uint cpu;   // The cpu holding the lock.
 };
 
-void            acquire(struct spinlock*);
-int             holding(struct spinlock*);
+void            acquire(struct spinlock*, uint c);
+int             holding(struct spinlock*, uint c);
 void            initlock(struct spinlock*, char*);
-void            release(struct spinlock*);
+void            release(struct spinlock*, uint c);

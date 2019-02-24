@@ -14,9 +14,9 @@ initlock(struct spinlock *lk, char *name)
 // Holding a lock for a long time may cause
 // other CPUs to waste time spinning to acquire it.
 void
-acquire(struct spinlock *lk)
+acquire(struct spinlock *lk, uint c)
 {
-  if(!holding(lk))
+  if(holding(lk, c))
     printf(1, "acquire_error\n");
 
   // The xchg is atomic.
@@ -27,16 +27,17 @@ acquire(struct spinlock *lk)
   // past this point, to ensure that the critical section's memory
   // references happen after the lock is acquired.
   __sync_synchronize();
+
+  lk->cpu = c;
 }
 
 // Release the lock.
 void
-release(struct spinlock *lk)
+release(struct spinlock *lk, uint c)
 {
-  if(!holding(lk))
+  if(!holding(lk, c))
     printf(1, "release_error\n");
 
-  lk->pcs[0] = 0;
   lk->cpu = 0;
 
   // Tell the C compiler and the processor to not move loads or stores
@@ -54,9 +55,9 @@ release(struct spinlock *lk)
 
 // Check whether this cpu is holding the lock.
 int
-holding(struct spinlock *lock)
+holding(struct spinlock *lock, uint c)
 {
   int r;
-  r = lock->locked;
+  r = lock->locked && lock->cpu == c;
   return r;
 }

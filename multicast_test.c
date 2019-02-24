@@ -6,12 +6,12 @@ volatile int num;
 struct spinlock lock;
 
 //signal handler
-//print statement doesn't work inside signal handler (why?)
+//calling other funcions doesn't work inside signal handler (why?)
 void test(){
 	printf(1, "*****inside signal handler\n");
-	acquire(&lock);
+	acquire(&lock, 1);
 	num = 9;
-	release(&lock);
+	release(&lock, 1);
 	return;
 }
 
@@ -37,12 +37,34 @@ int main(void)
 		printf(1, "child: handshake done\n");
 			
 		/* now do stuff */
+		acquire(&lock, 2);
 		printf(1,"%d\n", num);
+		release(&lock, 2);
+
+		acquire(&lock, 2);
 		printf(1,"%d\n", num);
+		release(&lock, 2);
+
+		acquire(&lock, 2);
 		printf(1,"%d\n", num);
+		release(&lock, 2);
+
+		acquire(&lock, 2);
 		printf(1,"%d\n", num);
+		release(&lock, 2);
+
+		acquire(&lock, 2);
 		printf(1,"%d\n", num);
-		printf(1,"%d\n", num);		
+		release(&lock, 2);
+
+		acquire(&lock, 2);
+		printf(1,"%d\n", num);
+		release(&lock, 2);
+
+		acquire(&lock, 2);
+		printf(1,"%d\n", num);
+		release(&lock, 2);
+
 		free(parid);
 		free(temp);
 
@@ -60,11 +82,12 @@ int main(void)
 		printf(1, "parent: handshake done\n");
 
 		/* now do stuff */
-		char *msg_child = (char *)malloc(MSGSIZE);
-		msg_child = "P";
-		int a[1];
-		a[0] = cid;
-		send_multi(getpid(),a,msg_child,1);		
+		//char *msg_child = (char *)malloc(MSGSIZE);
+		//msg_child = "P";
+		//int a[1];
+		//a[0] = cid;
+		//send_multi(getpid(),a,msg_child,1);		
+		test();
 		
 		free(parid);
 		free(temp);
