@@ -1,19 +1,23 @@
-#include "types.h"
-#include "stat.h"
-#include "user.h"
+#include "lock.h"
 
 #define MSGSIZE 8
 
 volatile int num;
+struct spinlock lock;
 
+//signal handler
+//print statement doesn't work inside signal handler (why?)
 void test(){
 	printf(1, "*****inside signal handler\n");
+	acquire(&lock);
 	num = 9;
+	release(&lock);
 	return;
 }
 
 int main(void)
 {
+	initlock(&lock, "num");
 	int cid = fork();
 	if(cid==0){
 		// This is child
@@ -44,8 +48,6 @@ int main(void)
 
 	}else{
 		// This is parent
-		printf(1,"handle ptrorig: %x\n", test);
-		printf(1,"value handle ptrorig: %x\n", *test);
 		/***** rendezvous via handshake ******/
 		/* sending its pid to child */
 		int *parid = (int*)malloc(MSGSIZE);

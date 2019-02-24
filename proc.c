@@ -659,7 +659,7 @@ send_signal(int sender_pid, char* msg, struct proc* p)
     popcli();
     //switch to kernel page table
     switchkvm();
-    cprintf("signal handler is set\n");
+    cprintf("signal handler called\n");
   }
   return 0;
 }
@@ -685,7 +685,7 @@ send_multi(void)
     int rec_pid = rec_list[i];
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->pid == rec_pid){
-        if(p->state == UNUSED){
+        if(p->state == UNUSED || p->state == EMBRYO || p->state == ZOMBIE){
           //invalid receiver id (Handle?)
         } else{
           send_signal(sender_pid, msg, p);
