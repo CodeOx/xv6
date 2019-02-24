@@ -3,13 +3,19 @@
 #define MSGSIZE 8
 
 volatile int num;
+volatile char* msgShared;
+volatile char* msgShared_temp;
 struct spinlock lock;
 
 //signal handler
 //calling other funcions doesn't work inside signal handler (why? or maybe just printf doesn't work?)
-void test(){
+//can't do syscall here
+//can't use lock here, unaivailable lock doesn't return to scheduler
+void test(char* msg){
 	printf(1, "*****inside signal handler\n");
 	//acquire(&lock, 1);
+	msgShared_temp = msgShared;
+	while((*msgShared_temp++ = *msg++) != 0);
 	num = 9;
 	//release(&lock, 1);
 	return;
@@ -23,6 +29,7 @@ int main(void)
 		// This is child
 		/****** set up signal handler ******/
 		num = 7;
+		msgShared = (char*)malloc(MSGSIZE);
 		printf(1,"%d\n", num);
 		set_handle(test);
 
@@ -38,31 +45,9 @@ int main(void)
 			
 		/* now do stuff */
 		acquire(&lock, 2);
-		printf(1,"%d\n", num);
-		release(&lock, 2);
-
-		acquire(&lock, 2);
-		printf(1,"%d\n", num);
-		release(&lock, 2);
-
-		acquire(&lock, 2);
-		printf(1,"%d\n", num);
-		release(&lock, 2);
-
-		acquire(&lock, 2);
-		printf(1,"%d\n", num);
-		release(&lock, 2);
-
-		acquire(&lock, 2);
-		printf(1,"%d\n", num);
-		release(&lock, 2);
-
-		acquire(&lock, 2);
-		printf(1,"%d\n", num);
-		release(&lock, 2);
-
-		acquire(&lock, 2);
-		printf(1,"%d\n", num);
+		while(num == 7);
+		printf(1, "%d\n", num);
+		printf(1, "%s\n", msgShared);
 		release(&lock, 2);
 
 		free(parid);
@@ -83,7 +68,7 @@ int main(void)
 
 		/* now do stuff */
 		char *msg_child = (char *)malloc(MSGSIZE);
-		msg_child = "P";
+		msg_child = "pqrs";
 		int a[1];
 		a[0] = cid;
 		send_multi(getpid(),a,msg_child,1);		

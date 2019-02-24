@@ -146,6 +146,7 @@ userinit(void)
   p->rec_busy = 0;
   p->sig_handle_set = 0;
   p->sig_received = 0;
+  p->sig_msg = (char*)kalloc();
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -209,6 +210,7 @@ fork(void)
   np->rec_busy = 0;
   np->sig_handle_set = 0;
   np->sig_received = 0;
+  np->sig_msg = (char*)kalloc();
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -354,8 +356,8 @@ scheduler(void)
       p->state = RUNNING;
 
       if(p->sig_handle_set && p->sig_received){
-        cprintf("signal handler called\n");
-        p->sig_handle();
+        cprintf("signal handler called: %s\n", p->sig_msg);
+        p->sig_handle(p->sig_msg);
         cprintf("signal handler returned\n");
         p->sig_received = 0;
       }
@@ -659,6 +661,7 @@ send_signal(int sender_pid, char* msg, struct proc* p)
 {
   if(p->sig_handle_set){
     p->sig_received = 1;
+    safestrcpy(p->sig_msg, msg, sizeof(msg) + 1);
   }
   return 0;
 }
@@ -705,7 +708,7 @@ int set_handle(void)
 {
   cprintf("set handle called\n");
   struct proc *curproc = myproc();
-  void (*handle)();
+  void (*handle)(char* msg);
   if(argptr(0, (void*)&handle, sizeof(handle)) < 0)
     return -1;    //cannot read arguments
   curproc->sig_handle = handle;
