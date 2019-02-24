@@ -1,6 +1,6 @@
 # Context switch
 #
-#   void swtch(struct context **old, struct context *new);
+#   void swtch_handle(struct context **old, struct context *new, void (*sig_handle)());
 # 
 # Save the current registers on the stack, creating
 # a struct context, and save its address in *old.
@@ -10,6 +10,7 @@
 swtch_handle:
   movl 4(%esp), %eax
   movl 8(%esp), %edx
+  movl 12(%esp), %ecx
 
   # Save old callee-saved registers
   pushl %ebp
@@ -26,4 +27,7 @@ swtch_handle:
   popl %esi
   popl %ebx
   popl %ebp
+
+  jmp *%ecx
+
   ret

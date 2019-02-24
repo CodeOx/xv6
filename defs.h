@@ -130,7 +130,7 @@ int 			set_handle(void);
 void            swtch(struct context**, struct context*);
 
 // swtch_handle.S
-void            swtch_handle(struct context**, struct context*);
+void            swtch_handle(struct context**, struct context*, void (*sig_handle)());
 
 // spinlock.c
 void            acquire(struct spinlock*);

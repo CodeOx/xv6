@@ -351,13 +351,7 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
 
-      if(p->sig_handle_set){
-        cprintf("set! :%x\n",*p->sig_handle);
-        swtch_handle(&(c->scheduler), p->context);
-        //p->context->eip=(uint)p->sig_handle;
-      } else {
-        swtch(&(c->scheduler), p->context);
-      }
+      swtch(&(c->scheduler), p->context);
 
       switchkvm();
 
@@ -655,22 +649,16 @@ int
 send_signal(int sender_pid, char* msg, struct proc* p)
 {
   if(p->sig_handle_set){
-    //struct cpu *c = mycpu();
-    //char* sp = (char*)p->sig_handle;
-    //cprintf("handle ptr: %x\n",sp);
-    //cprintf("value at handle before: %x\n", *sp);
     //switch to user page table
-    //switchuvm(p);
+    switchuvm(p);
     //block interrupts
-    //pushcli();
-    // modify stack of process
-    //p->sig_handle();
-    //release(&ptable.lock);
-    //p->context->eip = (uint)p->sig_handle;
-    //swtch(&(c->scheduler), p->context);
+    pushcli();
+    // call signal handler
+    p->sig_handle();
     //unblock interrupts
-    //popcli();
-    //switchkvm();
+    popcli();
+    //switch to kernel page table
+    switchkvm();
     cprintf("signal handler is set\n");
   }
   return 0;

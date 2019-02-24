@@ -4,8 +4,11 @@
 
 #define MSGSIZE 8
 
+volatile int num;
+
 void test(){
 	printf(1, "*****inside signal handler\n");
+	num = 9;
 	return;
 }
 
@@ -15,6 +18,8 @@ int main(void)
 	if(cid==0){
 		// This is child
 		/****** set up signal handler ******/
+		num = 7;
+		printf(1,"%d\n", num);
 		set_handle(test);
 
 		/* receive parent id */
@@ -26,8 +31,14 @@ int main(void)
 		temp = "A";
 		send(getpid(),*parid,temp);
 		printf(1, "child: handshake done\n");
-	
-		/* now do stuff */		
+			
+		/* now do stuff */
+		printf(1,"%d\n", num);
+		printf(1,"%d\n", num);
+		printf(1,"%d\n", num);
+		printf(1,"%d\n", num);
+		printf(1,"%d\n", num);
+		printf(1,"%d\n", num);		
 		free(parid);
 		free(temp);
 
@@ -55,7 +66,7 @@ int main(void)
 		
 		free(parid);
 		free(temp);
-
+		
 		wait();
 	}
 	
