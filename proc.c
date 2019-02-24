@@ -356,9 +356,9 @@ scheduler(void)
       p->state = RUNNING;
 
       if(p->sig_handle_set && p->sig_received){
-        cprintf("signal handler called: %s\n", p->sig_msg);
+        //cprintf("signal handler called: %s\n", p->sig_msg);
         p->sig_handle(p->sig_msg);
-        cprintf("signal handler returned\n");
+        //cprintf("signal handler returned\n");
         p->sig_received = 0;
       }
 
@@ -698,7 +698,7 @@ send_multi(void)
 
   release(&ptable.lock);
 
-  cprintf("send_multi :%s pid:%d %d\n", msg,sender_pid,rec_list[0]);
+  //cprintf("send_multi :%s pid:%d %d\n", msg,sender_pid,rec_list[0]);
 
   return 0;
 }
@@ -706,7 +706,7 @@ send_multi(void)
 //set signal handler
 int set_handle(void)
 {
-  cprintf("set handle called\n");
+  //cprintf("set handle called\n");
   struct proc *curproc = myproc();
   void (*handle)(char* msg);
   if(argptr(0, (void*)&handle, sizeof(handle)) < 0)
