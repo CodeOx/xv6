@@ -657,11 +657,11 @@ recv(void)
 }
 
 int 
-send_signal(int sender_pid, char* msg, struct proc* p)
+send_signal(int sender_pid, void* msg, struct proc* p)
 {
   if(p->sig_handle_set){
     p->sig_received = 1;
-    safestrcpy(p->sig_msg, msg, sizeof(msg) + 1);
+    memmove(p->sig_msg, msg, MSGSIZE);
   }
   return 0;
 }
@@ -708,7 +708,7 @@ int set_handle(void)
 {
   //cprintf("set handle called\n");
   struct proc *curproc = myproc();
-  void (*handle)(char* msg);
+  void (*handle)(void* msg);
   if(argptr(0, (void*)&handle, sizeof(handle)) < 0)
     return -1;    //cannot read arguments
   curproc->sig_handle = handle;

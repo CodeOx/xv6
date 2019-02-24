@@ -56,9 +56,9 @@ struct proc {
   int qhead, qtail;             // Queue head and tail
   int rec_busy;                 // Process waiting for message
   int sig_handle_set;           // Is the signal handler set
-  void (*sig_handle)(char* msg);         // Signal handler
+  void (*sig_handle)(void* msg);         // Signal handler
   int sig_received;             // Does the process receive a signal
-  char* sig_msg;                // Message received in the last signal
+  void* sig_msg;                // Message received in the last signal
 };
 
 // Process memory is laid out contiguously, low addresses first:

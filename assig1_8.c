@@ -4,6 +4,23 @@
 
 #define MSGSIZE 8
 
+volatile int num;
+volatile char* msgShared;
+volatile char* msgShared_temp;
+
+//signal handler
+//calling other funcions doesn't work inside signal handler (why? or maybe just printf doesn't work?)
+//can't do syscall here
+//can't use lock here, unaivailable lock doesn't return to scheduler
+void sig_handler(char* msg){
+	int i = MSGSIZE;
+	msgShared_temp = msgShared;
+	while(i--)
+		*msgShared_temp++ = *msg++;
+	num = 1;
+	return;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -38,6 +55,8 @@ main(int argc, char *argv[])
   	int cid[num_child];
   	int block = size/num_child;
   	int par_id = getpid();
+  	num = 0;
+  	msgShared = (char*)malloc(MSGSIZE);
 
   	//unicast sum : common for both type 0 and 1
   	for(int i = 0; i < num_child; i++){
@@ -59,20 +78,20 @@ main(int argc, char *argv[])
 			free(msg);
 			
 			if(type == 1){
-				//rendezvous here before continuing
-				char* temp = (char*)malloc(MSGSIZE);
-				recv(temp);
-				free(temp);
+				//set signal handler
+				set_handle(sig_handler);
+
+				while(num == 0);
 
 				float* mean = (float*)malloc(sizeof(float));
-				*mean = 4;
+				*mean = *(float*)msgShared;
 
 				//float* sum_sq = (float*)malloc(sizeof(float));
 				int* sum_sq = (int*)malloc(sizeof(int));
 				for(int j = start; j <= end; j++)
 					*sum_sq += (arr[j] - *mean) * (arr[j] - *mean);
 
-				printf(1, "sent: %d\n", *sum_sq);
+				//printf(1, "sent: %d\n", *sum_sq);
 				send(getpid(),par_id,sum_sq);	
 				
 				free(mean);
@@ -92,24 +111,19 @@ main(int argc, char *argv[])
 
   	//multicast variance : only for type 1
   	if(type==1){
-  		//rendezvoud message to all children (via unicast since blocking is required)
-  		char* temp = (char*)malloc(1);
-  		temp = "R";
-  		for(int i = 0; i < num_child; i++){
-  			printf(1, "cid: %d\n", cid[i]);
-  			send(par_id, cid[i], temp);
-  		}
 
-	  	//float mean = ((float)tot_sum)/size;
-	  	
+  		float* mean = (float*)malloc(sizeof(float));
+	  	*mean = tot_sum/size;
+		send_multi(par_id,cid,(char*)mean,num_child);	
+
 	  	int *msg = (int*)malloc(sizeof(int));
 	  	for(int i = 0; i < num_child; i++){
 			recv(msg);
-			printf(1, "received: %d\n", *msg);
+			//printf(1, "received: %d\n", *msg);
 			variance += msg[0];
 	  	}
 
-	  	free(temp);
+	  	free(mean);
 	  	free(msg);
 	}
 
