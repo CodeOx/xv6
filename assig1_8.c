@@ -51,7 +51,7 @@ main(int argc, char *argv[])
   
   	//----FILL THE CODE HERE for unicast sum and multicast variance
 
-  	int num_child = 2;	//number of child proceses
+  	int num_child = 7;	//number of child proceses
   	int cid[num_child];
   	int block = size/num_child;
   	int par_id = getpid();
