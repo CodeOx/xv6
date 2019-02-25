@@ -42,7 +42,8 @@ int
 sys_print_count(void)
 {
   for(int i = 1; i <= N_SYSCALLS; i++){
-  	cprintf("%s %d\n", syscall_name(i), syscall_count[i]);
+    if(syscall_count[i] > 0)
+    	cprintf("%s %d\n", syscall_name(i), syscall_count[i]);
   }
   return 0;
 }
