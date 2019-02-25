@@ -1,7 +1,7 @@
 #include "types.h"
 #include "defs.h"
 
-#define N_SYSCALLS 23
+#define N_SYSCALLS 29
 #define N_MAXSYSCALLS 30
 
 int trace_on = 0;				//used in syscall.c

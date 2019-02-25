@@ -81,6 +81,11 @@ main(int argc, char *argv[])
 				//set signal handler
 				set_handle(sig_handler);
 
+				int* msg = (int*)malloc(sizeof(int));
+				*msg = par_sum;
+				send(getpid(),par_id,msg);
+				free(msg);	
+
 				while(num == 0);
 
 				float* mean = (float*)malloc(sizeof(float));
@@ -114,9 +119,14 @@ main(int argc, char *argv[])
 
   		float* mean = (float*)malloc(sizeof(float));
 	  	*mean = tot_sum/size;
+	
+		char *msg = (char*)malloc(sizeof(int));				
+		for(int i = 0; i < num_child; i++){
+			recv(msg);
+		}
+
 		send_multi(par_id,cid,(char*)mean,num_child);	
 
-	  	char *msg = (char*)malloc(sizeof(int));
 	  	for(int i = 0; i < num_child; i++){
 			recv(msg);
 			//printf(1, "received: %d\n", (int)*(float*)msg);
