@@ -45,8 +45,11 @@ int main(int argc, char *argv[])
 			for (j =1; j< N-1; j++) u[i][j] = w[i][j];
 	}
 	for(i =0; i <N; i++){
-		for(j = 0; j<N; j++)
-			printf(1, "%6.2f,",u[i][j]);
+		for(j = 0; j<N; j++){
+			printf(1, "%d",(int)u[i][j]);
+			printf(1, ".");
+			printf(1, "%d,\t",(int)((u[i][j]-(int)u[i][j])*100));
+		}
 		printf(1, "\n");
 	}
 	printf(1, "\nNumber of iteration: %d\n",count);
