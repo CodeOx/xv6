@@ -1,57 +1,67 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#define N 10
-#define EPSILON 0.01
 
-double fabs(double n)
-{
-	if (n >= 0)
-		return n;
-	return -1*n;
+
+#define N 11
+#define E 0.00001
+#define T 100.0
+#define P 6
+#define L 20000
+
+float fabsm(float a){
+	if(a<0)
+	return -1*a;
+return a;
 }
-
 int main(int argc, char *argv[])
 {
-	double diff;
+	float diff;
 	int i,j;
-	double mean;
-	double u[N][N];
-	double w[N][N];
-	int count=0;
+	float mean;
+	float u[N][N];
+	float w[N][N];
 
+	int count=0;
 	mean = 0.0;
 	for (i = 0; i < N; i++){
-		u[i][0] = u[i][N-1] = u[0][i] = 100.0;
+		u[i][0] = u[i][N-1] = u[0][i] = T;
 		u[N-1][i] = 0.0;
 		mean += u[i][0] + u[i][N-1] + u[0][i] + u[N-1][i];
 	}
 	mean /= (4.0 * N);
 	for (i = 1; i < N-1; i++ )
 		for ( j= 1; j < N-1; j++) u[i][j] = mean;
+	
+	//fork here
 	for(;;){
 		diff = 0.0;
 		for(i =1 ; i < N-1; i++){
 			for(j =1 ; j < N-1; j++){
 				w[i][j] = ( u[i-1][j] + u[i+1][j]+
 					    u[i][j-1] + u[i][j+1])/4.0;
-				if( fabs(w[i][j] - u[i][j]) > diff )
-					diff = fabs(w[i][j]- u[i][j]);
-			count++;	
+				if( fabsm(w[i][j] - u[i][j]) > diff )
+					diff = fabsm(w[i][j]- u[i][j]);	
 			}
 		}
-		if(diff <= EPSILON) break;
+	    count++;
+	       
+		if(diff<= E || count > L){ 
+			//exit here
+			break;
+		}
+		//barrier here
+
 		for (i =1; i< N-1; i++)	
 			for (j =1; j< N-1; j++) u[i][j] = w[i][j];
 	}
+	//join here
+	
 	for(i =0; i <N; i++){
-		for(j = 0; j<N; j++){
-			printf(1, "%d",(int)u[i][j]);
-			printf(1, ".");
-			printf(1, "%d,\t",(int)((u[i][j]-(int)u[i][j])*100));
-		}
-		printf(1, "\n");
+		for(j = 0; j<N; j++)
+			printf(1,"%d ",((int)u[i][j]));
+		printf(1,"\n");
 	}
-	printf(1, "\nNumber of iteration: %d\n",count);
 	exit();
+
 }
