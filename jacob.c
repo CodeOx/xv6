@@ -71,8 +71,30 @@ int main(int argc, char *argv[])
 			}
 		}
 	    count++;
-	    //barrier here to send diff to parent - unicast
-	    //receive max diff from parent - multicast(1)
+	    if(my_id != par_id){
+	    	//barrier here to send diff to parent - unicast
+	    	float* d = (float*)malloc(MSGSIZE);
+	    	*d = diff;
+	    	send(my_id, par_id, d);
+	    	//receive max diff from parent - unicast {multicast?}
+	    	recv(d);
+	    	diff = *d;
+	    	free(d);
+	    } else {
+	    	//parent receives diff from each child and send the max to each child
+	    	float* d = (float*)malloc(MSGSIZE);
+	    	for(int px = 1; px < P; px++){
+				recv(d);
+				if(*d > diff)
+					diff = *d;
+	    	}
+	    	*d = diff;
+	    	for(int px = 0; px < P; px++){
+				send(par_id,pid[px],d);
+	    	}
+	    	recv(d);
+	    	free(d);
+	    }
 		if(diff<= E || count > L){ 
 			if(my_id != par_id){
 				//check if parent exited (so that it is waiting for child to exit) - unicast

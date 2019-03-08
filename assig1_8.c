@@ -2,7 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
-#define MSGSIZE 100
+#define MSGSIZE 8
 
 volatile int num;
 volatile char* msgShared;
