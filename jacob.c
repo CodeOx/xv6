@@ -33,6 +33,9 @@ int main(int argc, char *argv[])
 	for (i = 1; i < N-1; i++ )
 		for ( j= 1; j < N-1; j++) u[i][j] = mean;
 	
+	int pid[P];
+  	int block = N/P;
+  	int par_id = getpid(); pid[0] = par_id;
 	//fork here
 	for(;;){
 		diff = 0.0;
@@ -45,18 +48,25 @@ int main(int argc, char *argv[])
 			}
 		}
 	    count++;
-	       
+	    //barrier here to send diff to parent - unicast
+	    //receive max diff from parent - multicast(1)
 		if(diff<= E || count > L){ 
+			//check if parent exited (so that it is waiting for child to exit) - unicast
+			//send your values to parent
 			//exit here
 			break;
 		}
-		//barrier here
 
 		for (i =1; i< N-1; i++)	
-			for (j =1; j< N-1; j++) u[i][j] = w[i][j];
+			for (j =1; j< N-1; j++) u[i][j] = w[i][j];	//valid only for interior values
+		
+		// send boundary values to prev and next process - unicast {multicast?}
+		// wait for boundary values from the prev and next process - unicast {multicast?}
 	}
 	//join here
-	
+	//parent signals children to exit - unicast
+	//parent waits for values from children
+
 	for(i =0; i <N; i++){
 		for(j = 0; j<N; j++)
 			printf(1,"%d ",((int)u[i][j]));
