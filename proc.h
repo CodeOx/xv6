@@ -1,4 +1,4 @@
-#define MSGSIZE 8
+#define MSGSIZE 100
 #define MAX_Q_LEN 20
 
 // Per-CPU state

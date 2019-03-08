@@ -2,12 +2,19 @@
 #include "stat.h"
 #include "user.h"
 
+#define MSGSIZE 100
 
-#define N 11
+#define N 20
 #define E 0.00001
 #define T 100.0
 #define P 6
 #define L 20000
+
+struct Data{
+	int line_no;
+	char padding[MSGSIZE - 4 - (4*N)];
+	float line[N];
+};
 
 float fabsm(float a){
 	if(a<0)
@@ -34,12 +41,28 @@ int main(int argc, char *argv[])
 		for ( j= 1; j < N-1; j++) u[i][j] = mean;
 	
 	int pid[P];
-  	int block = N/P;
+  	int block = (N-2)/P;
   	int par_id = getpid(); pid[0] = par_id;
+	int p_no;
 	//fork here
+	for(p_no = 1; p_no < P; p_no++){
+		pid[p_no] = fork();
+		if( pid[p_no] == 0)
+			break;
+	}
+	int my_id = getpid();
+	int start = p_no*block + 1;
+	int end = (p_no+1)*block;
+	if(p_no == P-1){
+		end = N-2;
+	}
+	if(p_no == P){
+		start = 1;
+		end = block;
+	}
 	for(;;){
 		diff = 0.0;
-		for(i =1 ; i < N-1; i++){
+		for(i =start ; i <= end; i++){
 			for(j =1 ; j < N-1; j++){
 				w[i][j] = ( u[i-1][j] + u[i+1][j]+
 					    u[i][j-1] + u[i][j+1])/4.0;
@@ -51,9 +74,21 @@ int main(int argc, char *argv[])
 	    //barrier here to send diff to parent - unicast
 	    //receive max diff from parent - multicast(1)
 		if(diff<= E || count > L){ 
-			//check if parent exited (so that it is waiting for child to exit) - unicast
-			//send your values to parent
-			//exit here
+			if(my_id != par_id){
+				//check if parent exited (so that it is waiting for child to exit) - unicast
+				struct Data *d = (struct Data*)malloc(sizeof(struct Data));
+				recv(d);
+				//send your values to parent - unicast
+				for(int k = start; k <= end; k++){
+					d->line_no = k;
+					for(int x = 1; x < N-1; x++)
+						d->line[x] = w[k][x];
+					send(my_id, par_id, d);
+				}
+				free(d);
+				//exit here
+				exit();
+			}
 			break;
 		}
 
@@ -64,8 +99,21 @@ int main(int argc, char *argv[])
 		// wait for boundary values from the prev and next process - unicast {multicast?}
 	}
 	//join here
+	printf(1, "hello : %d\n", sizeof(struct Data));
 	//parent signals children to exit - unicast
+  	struct Data *d = (struct Data*)malloc(sizeof(struct Data));
+	for(p_no = 1; p_no < P; p_no++)
+		send(par_id,pid[p_no],d);	
+	//parent receives lines from children
+	for(int l = end+1; l < N-1; l++){
+		recv(d);
+		for(int x = 1; x < N-1; x++)
+			u[d->line_no][x] = d->line[x];
+	}
+	free(d);
 	//parent waits for values from children
+	for(p_no = 1; p_no < P; p_no++)
+		wait();	
 
 	for(i =0; i <N; i++){
 		for(j = 0; j<N; j++)
