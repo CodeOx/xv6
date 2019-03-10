@@ -16,7 +16,7 @@ struct barrier_type
 {
     int nproc;
     int counter; // initialize to 0
-    int flag; // initialize to 0
+    volatile int flag; // initialize to 0
     struct spinlock lock;
 };
 
@@ -768,7 +768,7 @@ int barrier(void)
   else
   {
       release(&b.lock);
-      while (b.flag != curproc->local_sense){cprintf("");} // wait for flag
+      while (b.flag != curproc->local_sense); // wait for flag
   }
   //cprintf("barrier returned: %d:%d\n", curproc->pid, b.flag);
   return 0;
