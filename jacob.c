@@ -82,34 +82,36 @@ int main(int argc, char *argv[])
 	/********** set prev and next ***********/
 	/****************************************/
 	int prev=-1, next=-1;
-	int* d1 = (int*)malloc(MSGSIZE);
-	if(p_no == P){
-		next = pid[1];
-		//send prev to children
-		for(int px = 1; px < P; px++){
-			*d1 = pid[px-1];
-			send(par_id, pid[px], d1);
-		}
-		for(int px = 1; px < P; px++){
+	if(P > 1){
+		int* d1 = (int*)malloc(MSGSIZE);
+		if(p_no == P){
+			next = pid[1];
+			//send prev to children
+			for(int px = 1; px < P; px++){
+				*d1 = pid[px-1];
+				send(par_id, pid[px], d1);
+			}
+			for(int px = 1; px < P; px++){
+				recv(d1);
+			}
+			//send next to children
+			for(int px = 1; px < P-1; px++){
+				*d1 = pid[px+1];
+				send(par_id, pid[px], d1);
+			}
+		} else {
+			//receive pid of prev from parent
 			recv(d1);
+			prev = *d1;
+			//reply d
+			send(my_id, par_id, d1);
+			//receive pid of next from parent
+			if(p_no != P-1)
+				recv(d1);
+			next = *d1;
 		}
-		//send next to children
-		for(int px = 1; px < P-1; px++){
-			*d1 = pid[px+1];
-			send(par_id, pid[px], d1);
-		}
-	} else {
-		//receive pid of prev from parent
-		recv(d1);
-		prev = *d1;
-		//reply d
-		send(my_id, par_id, d1);
-		//receive pid of next from parent
-		if(p_no != P-1)
-			recv(d1);
-		next = *d1;
+		free(d1);
 	}
-	free(d1);
 	
 	/*****************************************/
 	/***************parallel*****************/
@@ -128,26 +130,28 @@ int main(int argc, char *argv[])
 		}
 	    count++;
 	    
-	    if(my_id != par_id){
-	    	*d2 = diff;
-	    	send(my_id, par_id, d2);	//barrier here to send diff to parent - unicast
-	    	recv(d2);	//receive max diff from parent - unicast {multicast?}
-	    	diff = *d2;
-	    } else {
-	    	//parent receives diff from each child and send the max to each child
-	    	for(int px = 1; px < P; px++){
-				recv(d2);
-				if(*d2 > diff)
-					diff = *d2;
-	    	}
-	    	*d2 = diff;
-	    	for(int px = 0; px < P; px++){
-				send(par_id,pid[px],d2);
-	    	}
-	    	recv(d2);
-	    }
+	    if(P > 1){
+		    if(my_id != par_id){
+		    	*d2 = diff;
+		    	send(my_id, par_id, d2);	//barrier here to send diff to parent - unicast
+		    	recv(d2);	//receive max diff from parent - unicast {multicast?}
+		    	diff = *d2;
+		    } else {
+		    	//parent receives diff from each child and send the max to each child
+		    	for(int px = 1; px < P; px++){
+					recv(d2);
+					if(*d2 > diff)
+						diff = *d2;
+		    	}
+		    	*d2 = diff;
+		    	for(int px = 0; px < P; px++){
+					send(par_id,pid[px],d2);
+		    	}
+		    	recv(d2);
+		    }
 
-	    barrier(bno);
+		    barrier(bno);
+		}
 
 	    if(diff<= E || count > L){ 
 	    	free(d2);
@@ -173,36 +177,36 @@ int main(int argc, char *argv[])
 		
 		// send boundary values to prev and next process - unicast {multicast?}
 		// first doesn't send to a precess before, p_no == P denotes parent -> first block
-		if(p_no != P){
-			d->line_no = start;
-			for(int x = 1; x < N-1; x++)
-				d->line[x] = w[start][x];
-			send(my_id, prev, d);
-		}
-		
-		// last doesn't send to process after
-		if(p_no != P-1){
-			d->line_no = end;
-			for(int x = 1; x < N-1; x++)
-				d->line[x] = w[end][x];
-			send(my_id, next, d);
-		}
+		if(P > 1){
+			if(p_no != P){
+				d->line_no = start;
+				for(int x = 1; x < N-1; x++)
+					d->line[x] = w[start][x];
+				send(my_id, prev, d);
+			}
+			
+			// last doesn't send to process after
+			if(p_no != P-1){
+				d->line_no = end;
+				for(int x = 1; x < N-1; x++)
+					d->line[x] = w[end][x];
+				send(my_id, next, d);
+			}
 
-		// wait for boundary values from the prev and next process - unicast {multicast?}
-		recv(d);
-		for(int x = 1; x < N-1; x++)
-			u[d->line_no][x] = d->line[x];
-		
-		// first and last receive from only one process
-		if(p_no != P && p_no != P-1){
+			// wait for boundary values from the prev and next process - unicast {multicast?}
 			recv(d);
 			for(int x = 1; x < N-1; x++)
 				u[d->line_no][x] = d->line[x];
-		}
+			
+			// first and last receive from only one process
+			if(p_no != P && p_no != P-1){
+				recv(d);
+				for(int x = 1; x < N-1; x++)
+					u[d->line_no][x] = d->line[x];
+			}
 
-		//if(p_no == P)
-		//	printf(1, "%d\n", count);
-		barrier(bno);
+			barrier(bno);
+		}
 	}
 
 	/**************join here***************/
