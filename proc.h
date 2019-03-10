@@ -59,6 +59,7 @@ struct proc {
   void (*sig_handle)(void* msg);         // Signal handler
   int sig_received;             // Does the process receive a signal
   void* sig_msg;                // Message received in the last signal
+  int local_sense;          //for barrier
 };
 
 // Process memory is laid out contiguously, low addresses first:

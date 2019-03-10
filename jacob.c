@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
   	int block = (N-2)/P;
   	int par_id = getpid(); pid[0] = par_id;
 	int p_no;
+	int bno = set_barrier(P);
 	/**************fork here****************/
 	for(p_no = 1; p_no < P; p_no++){
 		pid[p_no] = fork();
@@ -111,8 +112,12 @@ int main(int argc, char *argv[])
 	}
 	free(d1);
 	printf(1, "%d:%d\n", prev, next);
+	
 	/*****************************************/
-
+	/***************parallel*****************/
+	float* d2 = (float*)malloc(MSGSIZE);
+	struct Data *d = (struct Data*)malloc(sizeof(struct Data));
+	
 	for(;;){
 		diff = 0.0;
 		for(i =start ; i <= end; i++){
@@ -126,33 +131,30 @@ int main(int argc, char *argv[])
 	    count++;
 	    
 	    if(my_id != par_id){
-	    	//barrier here to send diff to parent - unicast
-	    	float* d = (float*)malloc(MSGSIZE);
-	    	*d = diff;
-	    	send(my_id, par_id, d);
-	    	//receive max diff from parent - unicast {multicast?}
-	    	recv(d);
-	    	diff = *d;
-	    	free(d);
+	    	*d2 = diff;
+	    	send(my_id, par_id, d2);	//barrier here to send diff to parent - unicast
+	    	//printf(1, "S:%d\n", my_id);
+	    	recv(d2);	//receive max diff from parent - unicast {multicast?}
+	    	diff = *d2;
 	    } else {
 	    	//parent receives diff from each child and send the max to each child
-	    	float* d = (float*)malloc(MSGSIZE);
 	    	for(int px = 1; px < P; px++){
-				recv(d);
-				if(*d > diff)
-					diff = *d;
+				recv(d2);
+				if(*d2 > diff)
+					diff = *d2;
 	    	}
-	    	*d = diff;
+	    	*d2 = diff;
 	    	for(int px = 0; px < P; px++){
-				send(par_id,pid[px],d);
+				send(par_id,pid[px],d2);
 	    	}
-	    	recv(d);
-	    	free(d);
+	    	recv(d2);
 	    }
 	    
+	    //printf(1, "%d/%d\n", (int)diff, count);
+
 	    if(diff<= E || count > L){ 
+	    	free(d2);
 			if(my_id != par_id){
-				struct Data *d = (struct Data*)malloc(sizeof(struct Data));
 				//send your values to parent - unicast
 				for(int k = start; k <= end; k++){
 					d->line_no = k;
@@ -160,8 +162,8 @@ int main(int argc, char *argv[])
 						d->line[x] = w[k][x];
 					send(my_id, par_id, d);
 				}
-				//check if parent exited (so that it is waiting for child to exit) - unicast
-				recv(d);
+				//check if parent exited (so that it is waiting for child to exit)
+				//recv(d)
 				
 				free(d);
 				exit();
@@ -172,14 +174,14 @@ int main(int argc, char *argv[])
 		for (i =1; i< N-1; i++)	
 			for (j =1; j< N-1; j++) u[i][j] = w[i][j];	//valid only for interior values
 		
-		/*struct Data *d = (struct Data*)malloc(sizeof(struct Data));
 		// send boundary values to prev and next process - unicast {multicast?}
 		// first doesn't send to a precess before, p_no == P denotes parent -> first block
-		if(p_no != P){
+		/*if(p_no != P){
 			d->line_no = start;
 			for(int x = 1; x < N-1; x++)
 				d->line[x] = w[start][x];
 			send(my_id, prev, d);
+			//printf(1, "s:%d:%d\n", my_id, prev);
 		}
 		
 		// last doesn't send to process after
@@ -188,34 +190,39 @@ int main(int argc, char *argv[])
 			for(int x = 1; x < N-1; x++)
 				d->line[x] = w[end][x];
 			send(my_id, next, d);
+			//printf(1, "s:%d:%d\n", my_id, next);
 		}
 		
 		// wait for boundary values from the prev and next process - unicast {multicast?}
 		recv(d);
+		//printf(1, "r_%d\n", my_id);
 		for(int x = 1; x < N-1; x++)
 			u[d->line_no][x] = d->line[x];
 		
 		// first and last receive from only one process
 		if(p_no != P && p_no != P-1){
 			recv(d);
+			//printf(1, "R_%d\n", my_id);
 			for(int x = 1; x < N-1; x++)
 				u[d->line_no][x] = d->line[x];
-		}
-		free(d);*/
+		}*/
+
+		barrier(bno);
 	}
 
 	/**************join here***************/
 	//parent receives lines from children
-	struct Data *d = (struct Data*)malloc(sizeof(struct Data));
 	for(int l = end+1; l < N-1; l++){
 		recv(d);
 		for(int x = 1; x < N-1; x++)
-			u[d->line_no][x] = d->line[x];
+			w[d->line_no][x] = d->line[x];
 	}
 	//parent signals children to exit - unicast
-	for(p_no = 1; p_no < P; p_no++)
+	/*for(p_no = 1; p_no < P; p_no++)
 		send(par_id,pid[p_no],d);	
+	*/
 	free(d);
+
 	//parent waits for children to exit
 	for(p_no = 1; p_no < P; p_no++)
 		wait();	
@@ -223,7 +230,7 @@ int main(int argc, char *argv[])
 
 	for(i =0; i <N; i++){
 		for(j = 0; j<N; j++)
-			printf(1,"%d ",((int)u[i][j]));
+			printf(1,"%d ",((int)w[i][j]));
 		printf(1,"\n");
 	}
 	exit();

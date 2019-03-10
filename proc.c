@@ -12,6 +12,15 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
+struct barrier_type
+{
+    int nproc;
+    int counter; // initialize to 0
+    int flag; // initialize to 0
+    struct spinlock lock;
+};
+
+struct barrier_type b;
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -147,6 +156,7 @@ userinit(void)
   p->sig_handle_set = 0;
   p->sig_received = 0;
   p->sig_msg = (char*)kalloc();
+  p->local_sense = 0;
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -211,6 +221,7 @@ fork(void)
   np->sig_handle_set = 0;
   np->sig_received = 0;
   np->sig_msg = (char*)kalloc();
+  np->local_sense = 0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -713,5 +724,52 @@ int set_handle(void)
     return -1;    //cannot read arguments
   curproc->sig_handle = handle;
   curproc->sig_handle_set = 1;
+  return 0;
+}
+
+//set barrier
+int set_barrier(void)
+{
+  int nproc;
+  if(argint(0, &nproc) < 0)
+    return -1;    //cannot read arguments
+  initlock(&b.lock, "barrier");
+  b.nproc = nproc;
+  b.counter = 0;
+  b.flag = 0;
+  //cprintf("barrier set: %d\n", b.nproc);
+  return 0;
+}
+
+//barrier
+int barrier(void)
+{
+  int bnum;
+  if(argint(0, &bnum) < 0)
+    return -1;    //cannot read arguments
+
+  struct proc *curproc = myproc();
+  
+  //cprintf("barrier called: %d\n", curproc->pid);
+
+  acquire(&b.lock);
+  curproc->local_sense = 1 - curproc->local_sense;
+  b.counter++;
+  int arrived = b.counter;
+  if (arrived == b.nproc) // last arriver sets flag
+  {
+      release(&b.lock);
+      b.counter = 0;
+      // memory fence to ensure that the change to counter
+      // is seen before the change to flag
+      b.flag = curproc->local_sense;
+      //cprintf("barrier flag: %d\n", b.flag);
+  }
+  else
+  {
+      release(&b.lock);
+      while (b.flag != curproc->local_sense){cprintf("");} // wait for flag
+  }
+  //cprintf("barrier returned: %d:%d\n", curproc->pid, b.flag);
   return 0;
 }

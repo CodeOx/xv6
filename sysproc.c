@@ -119,3 +119,15 @@ sys_set_handle(void)
 {
   return set_handle();
 }
+
+int
+sys_set_barrier(void)
+{
+  return set_barrier();
+}
+
+int
+sys_barrier(void)
+{
+  return barrier();
+}

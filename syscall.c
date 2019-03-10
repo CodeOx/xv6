@@ -111,6 +111,8 @@ extern int sys_send(void);
 extern int sys_recv(void);
 extern int sys_send_multi(void);
 extern int sys_set_handle(void);
+extern int sys_set_barrier(void);
+extern int sys_barrier(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -142,6 +144,8 @@ static int (*syscalls[])(void) = {
 [SYS_recv] sys_recv,
 [SYS_send_multi] sys_send_multi,
 [SYS_set_handle] sys_set_handle,
+[SYS_set_barrier] sys_set_barrier,
+[SYS_barrier] sys_barrier,
 };
 
 extern int syscall_count[];
