@@ -4,7 +4,7 @@
 
 #define MSGSIZE 100
 
-#define N 20
+#define N 11
 #define E 0.00001
 #define T 100.0
 #define P 6
@@ -37,7 +37,7 @@ return a;
 }
 int main(int argc, char *argv[])
 {
-	float diff;
+	volatile float diff;
 	int i,j;
 	float mean;
 	float u[N][N];
@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
 		pid[p_no] = fork();
 		if( pid[p_no] == 0)
 			break;
-		printf(1, "%d\n", pid[p_no]);
 	}
 	int my_id = getpid();
 	int start = p_no*block + 1;
@@ -111,7 +110,6 @@ int main(int argc, char *argv[])
 		next = *d1;
 	}
 	free(d1);
-	printf(1, "%d:%d\n", prev, next);
 	
 	/*****************************************/
 	/***************parallel*****************/
@@ -133,9 +131,7 @@ int main(int argc, char *argv[])
 	    if(my_id != par_id){
 	    	*d2 = diff;
 	    	send(my_id, par_id, d2);	//barrier here to send diff to parent - unicast
-	    	//printf(1, "S:%d\n", my_id);
 	    	recv(d2);	//receive max diff from parent - unicast {multicast?}
-	    	//printf(1, "R:%d\n", my_id);
 	    	diff = *d2;
 	    } else {
 	    	//parent receives diff from each child and send the max to each child
@@ -150,12 +146,10 @@ int main(int argc, char *argv[])
 	    	}
 	    	recv(d2);
 	    }
-	    
-	    //printf(1, "%d/%d\n", (int)diff, count);
 
-	    if(diff<= E || count > L){
-	    //if(count > L){
-	    	//printf(1,"E:%d_%d\n", my_id, count); 
+	    barrier(bno);
+
+	    if(diff<= E || count > L){ 
 	    	free(d2);
 			if(my_id != par_id){
 				//send your values to parent - unicast
@@ -177,14 +171,13 @@ int main(int argc, char *argv[])
 		for (i =1; i< N-1; i++)	
 			for (j =1; j< N-1; j++) u[i][j] = w[i][j];	//valid only for interior values
 		
-		/*// send boundary values to prev and next process - unicast {multicast?}
+		// send boundary values to prev and next process - unicast {multicast?}
 		// first doesn't send to a precess before, p_no == P denotes parent -> first block
 		if(p_no != P){
 			d->line_no = start;
 			for(int x = 1; x < N-1; x++)
 				d->line[x] = w[start][x];
 			send(my_id, prev, d);
-			//printf(1, "s:%d:%d\n", my_id, prev);
 		}
 		
 		// last doesn't send to process after
@@ -193,25 +186,22 @@ int main(int argc, char *argv[])
 			for(int x = 1; x < N-1; x++)
 				d->line[x] = w[end][x];
 			send(my_id, next, d);
-			//printf(1, "s:%d:%d\n", my_id, next);
 		}
-		printf(1, "B:%d\n", my_id);		
-		barrier(bno);
+
 		// wait for boundary values from the prev and next process - unicast {multicast?}
 		recv(d);
-		//printf(1, "r_%d\n", my_id);
 		for(int x = 1; x < N-1; x++)
 			u[d->line_no][x] = d->line[x];
 		
 		// first and last receive from only one process
 		if(p_no != P && p_no != P-1){
 			recv(d);
-			//printf(1, "R_%d\n", my_id);
 			for(int x = 1; x < N-1; x++)
 				u[d->line_no][x] = d->line[x];
 		}
 
-		printf(1, "b:%d\n", my_id);*/
+		//if(p_no == P)
+		//	printf(1, "%d\n", count);
 		barrier(bno);
 	}
 
