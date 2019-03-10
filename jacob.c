@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 	for(int l = end+1; l < N-1; l++){
 		recv(d);
 		for(int x = 1; x < N-1; x++)
-			w[d->line_no][x] = d->line[x];
+			u[d->line_no][x] = d->line[x];
 	}
 	//parent signals children to exit - unicast
 	/*for(p_no = 1; p_no < P; p_no++)
@@ -221,11 +221,16 @@ int main(int argc, char *argv[])
 	//parent waits for children to exit
 	for(p_no = 1; p_no < P; p_no++)
 		wait();	
+	
+	for(int l = start; l <= end; l++){
+		for(int x = 1; x < N-1; x++)
+			u[l][x] = w[l][x];
+	}
 	/***************************************/
 
 	for(i =0; i <N; i++){
 		for(j = 0; j<N; j++)
-			printf(1,"%d ",((int)w[i][j]));
+			printf(1,"%d ",((int)u[i][j]));
 		printf(1,"\n");
 	}
 	exit();
