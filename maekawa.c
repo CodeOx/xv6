@@ -4,14 +4,44 @@
 
 #define MSGSIZE 100
 #define P 9
-#define P1 5
+#define P1 8
 #define P2 1
-#define P3 3
+#define P3 0
 
-volatile int numRelease;
+struct message{
+	int pid;
+	int time;	//timestamp
+	char type;	//R:request, L:locked, F:failed, I:inquire, Q:relenquish, S:released
+};
+
 int *pid;
 int *req_set;
 int req_size;
+int my_id;
+
+volatile int numRelease;
+volatile int state;		//0: unlocked, 1: locked
+volatile char* msgShared;
+volatile char* msgShared_temp;
+volatile struct message *m_recv;
+volatile struct message *m_send;
+
+//signal handler
+void sig_handler(char* msg){
+	int i = MSGSIZE;
+	msgShared_temp = msgShared;
+	while(i--)
+		*msgShared_temp++ = *msg++;
+	m_recv = (struct message*)msgShared;
+	switch(m_recv->type){
+		case 'R': if(state == 0)
+					state = 1;
+				send_multi(my_id,req_set,(char*)m_send,1);
+				break;
+		default: break;
+	}
+	return;
+}
 
 void request_set(int pno){
 	int row_size;
@@ -37,7 +67,12 @@ void request_set(int pno){
 }
 
 void acquire1(){
-
+	struct message *m = (struct message*)malloc(MSGSIZE);
+	m->pid = my_id;
+	m->time = uptime();
+	m->type = 'R';
+	send_multi(my_id,req_set,(char*)m,req_size);
+	free(m);
 }
 
 void release1(){
@@ -50,9 +85,16 @@ int main(int argc, char *argv[])
 	pid = (int*)malloc(MSGSIZE);
 	int P1id[P1], P2id[P2], P3id[P3];
 	
+	msgShared = (char*)malloc(MSGSIZE);
+	m_send = (struct message*)malloc(MSGSIZE);
+	state = 0;
+
 	for(int i = 0; i< P1; i++){
 		P1id[i] = fork();
 		if(P1id[i] == 0){
+			my_id = getpid();
+			//set signal handler
+			set_handle(sig_handler);
 			recv(pid);
 			//while(numRelease < P);
 			exit();
@@ -63,6 +105,9 @@ int main(int argc, char *argv[])
 	for(int i = 0; i < P2; i++){
 		P2id[i] = fork();
 		if(P2id[i] == 0){
+			my_id = getpid();
+			//set signal handler
+			set_handle(sig_handler);
 			recv(pid);
 			request_set(P1 + i);
 			acquire1();
@@ -70,6 +115,7 @@ int main(int argc, char *argv[])
 			sleep(200);	//sleep for 2 sec
 			//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
 			release1();
+			printf(1, "s:%d\n", state);			
 			exit();
 		}
 		pid[P1+i] = P2id[i];
@@ -78,6 +124,9 @@ int main(int argc, char *argv[])
 	for(int i = 0; i < P3; i++){
 		P3id[i] = fork();
 		if(P3id[i] == 0){
+			my_id = getpid();
+			//set signal handler
+			set_handle(sig_handler);
 			recv(pid);
 			request_set(P1 + P2 + i);
 			acquire1();
