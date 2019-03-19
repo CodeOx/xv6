@@ -62,15 +62,20 @@ void listen(){
 	struct message *lockingRequest = (struct message*)malloc(MSGSIZE);
 	struct message *minRequest;
 	struct waitQItem waitQ[WAITQLENGTH];
+	struct waitQItem enquireQ[WAITQLENGTH];
 	for(int i = 0; i < WAITQLENGTH; i++){
 		waitQ[i].allotted = 0;
 		waitQ[i].m = (struct message*)malloc(MSGSIZE);
+
+		enquireQ[i].allotted = 0;
+		enquireQ[i].m = (struct message*)malloc(MSGSIZE);
 	}
 	
 	int state = 0;
 	int numRelease = 0;
 	int numLockedReply = 0;
 	int inq_sent = 0;
+	int inq_recv = 0;
 	int fail_recv = 0;
 	
 	while(1){
@@ -142,8 +147,30 @@ void listen(){
 					}
 					break;
 			case 'F': fail_recv = 1;
+					if(inq_recv > 0){
+						for(int i = 0; i < WAITQLENGTH; i++){
+							if(enquireQ[i].allotted == 1){
+								inq_recv--;
+								enquireQ[i].allotted = 0;
+
+								m_reply->pid = my_id;
+								m_reply->time = enquireQ[i].m->time;
+								m_reply->type = 'Q';
+								send(my_id, enquireQ[i].m->pid, m_reply);
+								
+								break;
+							}
+						}
+					}
 					break;
-			case 'S': int available = 0;
+			case 'S': numRelease++;
+					inq_sent = 0;
+					
+					if(m->pid == my_id){
+						inq_recv = 0;
+					}
+
+					int available = 0;
 					for(int i = 0; i < WAITQLENGTH; i++){
 						if(waitQ[i].allotted == 1){
 							if(available == 0 || precedes(waitQ[i].m, minRequest)){
@@ -172,6 +199,63 @@ void listen(){
 						
 						send(my_id, minRequest->pid, m_reply);
 					}
+					break;
+			case 'I': if(fail_recv){
+						m_reply->pid = my_id;
+						m_reply->time = m->time;
+						m_reply->type = 'Q';
+						send(my_id, m->pid, m_reply);
+						numLockedReply--;	
+						break;
+					} else {
+						inq_recv++;
+						for(int i = 0; i < WAITQLENGTH; i++){
+							if(enquireQ[i].allotted == 0){
+								enquireQ[i].allotted = 1;
+								enquireQ[i].m->pid = m->pid;
+								enquireQ[i].m->time = m->time;
+								enquireQ[i].m->type = m->type;
+								break;
+							}
+						}
+					}
+					break;
+			case 'Q': for(int i = 0; i < WAITQLENGTH; i++){
+						if(waitQ[i].allotted == 0){
+							waitQ[i].allotted = 1;
+							waitQ[i].m->pid = lockingRequest->pid;
+							waitQ[i].m->time = lockingRequest->time;
+							waitQ[i].m->type = lockingRequest->type;
+							break;
+						}
+					}
+					int available = 0;
+					for(int i = 0; i < WAITQLENGTH; i++){
+						if(waitQ[i].allotted == 1){
+							if(available == 0 || precedes(waitQ[i].m, minRequest)){
+								available = 1;
+								minRequest = waitQ[i].m;
+							}
+						}
+					}
+
+					for(int i = 0; i < WAITQLENGTH; i++){
+						if(waitQ[i].allotted == 1 && waitQ[i].m->pid == minRequest->pid){
+							waitQ[i].allotted = 0;
+							break;
+						}
+					}
+
+					lockingRequest->pid = minRequest->pid;
+					lockingRequest->time = minRequest->time;
+					lockingRequest->type = minRequest->type;
+
+					m_reply->pid = my_id;
+					m_reply->time = minRequest->time;
+					m_reply->type = 'L';
+					
+					send(my_id, minRequest->pid, m_reply);
+
 					break;
 			default: printf(1, "Error Type\n"); break;
 		}
@@ -222,8 +306,6 @@ int main(int argc, char *argv[])
 		P2id[i] = fork();
 		if(P2id[i] == 0){
 			my_id = getpid();
-			//set signal handler
-			set_handle(sig_handler);
 			recv(pid);
 			request_set(P1 + i);
 			child_id = fork();
@@ -235,8 +317,7 @@ int main(int argc, char *argv[])
 				release1();
 				exit();	
 			}
-			listen();
-			printf(1, "s:%d\n", state);			
+			listen();	
 			exit();
 		}
 		pid[P1+i] = P2id[i];
@@ -246,8 +327,6 @@ int main(int argc, char *argv[])
 		P3id[i] = fork();
 		if(P3id[i] == 0){
 			my_id = getpid();
-			//set signal handler
-			set_handle(sig_handler);
 			recv(pid);
 			request_set(P1 + P2 + i);
 			child_id = fork();
