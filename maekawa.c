@@ -5,8 +5,8 @@
 #define WAITQLENGTH 10
 #define MSGSIZE 100
 #define P 9
-#define P1 8
-#define P2 1
+#define P1 0
+#define P2 9
 #define P3 0
 
 struct message{
@@ -84,7 +84,7 @@ void listen(){
 	
 	while(1){
 		recv(m);
-		printM(my_id, m);
+		//printM(my_id, m);
 		switch(m->type){
 			case 'R': if(state == 0){
 						state = 1;
@@ -348,8 +348,8 @@ int main(int argc, char *argv[])
 			child_id = fork();
 			if(child_id == 0){
 				acquire1();
-				//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
-				//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d released the lock at time %d\n", getpid(), uptime());
 				release1();
 				send(getpid(), globalParentId, pid);
 				exit();
