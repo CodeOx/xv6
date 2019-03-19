@@ -60,7 +60,7 @@ void listen(){
 	struct message *m = (struct message*)malloc(MSGSIZE);
 	struct message *m_reply = (struct message*)malloc(MSGSIZE);
 	struct message *lockingRequest = (struct message*)malloc(MSGSIZE);
-	struct message *minRequest;
+	struct message *minRequest = m;
 	struct waitQItem waitQ[WAITQLENGTH];
 	struct waitQItem enquireQ[WAITQLENGTH];
 	for(int i = 0; i < WAITQLENGTH; i++){
@@ -164,6 +164,9 @@ void listen(){
 					}
 					break;
 			case 'S': numRelease++;
+					if(numRelease >= P2 + P3)
+						return;
+
 					inq_sent = 0;
 					
 					if(m->pid == my_id){
@@ -229,11 +232,11 @@ void listen(){
 							break;
 						}
 					}
-					int available = 0;
+					int available1 = 0;
 					for(int i = 0; i < WAITQLENGTH; i++){
 						if(waitQ[i].allotted == 1){
-							if(available == 0 || precedes(waitQ[i].m, minRequest)){
-								available = 1;
+							if(available1 == 0 || precedes(waitQ[i].m, minRequest)){
+								available1 = 1;
 								minRequest = waitQ[i].m;
 							}
 						}
@@ -257,7 +260,7 @@ void listen(){
 					send(my_id, minRequest->pid, m_reply);
 
 					break;
-			default: printf(1, "Error Type\n"); break;
+			default: printf(1, "Error Type : %c\n", m->type); break;
 		}
 	}
 }
