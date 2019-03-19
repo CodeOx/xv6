@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
+#define WAITQLENGTH 10
 #define MSGSIZE 100
 #define P 9
 #define P1 8
@@ -9,42 +10,22 @@
 #define P3 0
 
 struct message{
-	int pid;
+	int pid;	//sender id
 	int time;	//timestamp
-	char type;	//R:request, L:locked, F:failed, I:inquire, Q:relenquish, S:released
+	char type;	//R:request, L:locked, F:failed, I:inquire, Q:relenquish, S:released, A:access granted to child
+};
+
+struct waitQItem
+{
+	int allotted;
+	struct message *m;	
 };
 
 int *pid;
 int *req_set;
 int req_size;
 int my_id;
-
-volatile int numRelease;
-volatile int numLockedReply;
-volatile int state;		//0: unlocked, x: locked on pid x
-volatile char* msgShared;
-volatile char* msgShared_temp;
-volatile struct message *m_recv;
-volatile struct message *m_send;
-
-//signal handler
-void sig_handler(char* msg){
-	printf(1,"here\n");
-	int i = MSGSIZE;
-	msgShared_temp = msgShared;
-	while(i--)
-		*msgShared_temp++ = *msg++;
-	m_recv = (struct message*)msgShared;
-	switch(m_recv->type){
-		case 'R': if(state == 0)
-					state = m_recv->pid;
-				break;
-		case 'L': numLockedReply++;
-				break;
-		default: break;
-	}
-	return;
-}
+int child_id;
 
 void request_set(int pno){
 	int row_size;
@@ -69,39 +50,169 @@ void request_set(int pno){
 	return;
 }
 
+int precedes(struct message* m1, struct message* m2){
+	if(m1->time < m2->time || (m1->time == m2->time && m1->pid < m2->pid))
+		return 1;
+	return 0;
+}
+
+void listen(){
+	struct message *m = (struct message*)malloc(MSGSIZE);
+	struct message *m_reply = (struct message*)malloc(MSGSIZE);
+	struct message *lockingRequest = (struct message*)malloc(MSGSIZE);
+	struct message *minRequest;
+	struct waitQItem waitQ[WAITQLENGTH];
+	for(int i = 0; i < WAITQLENGTH; i++){
+		waitQ[i].allotted = 0;
+		waitQ[i].m = (struct message*)malloc(MSGSIZE);
+	}
+	
+	int state = 0;
+	int numRelease = 0;
+	int numLockedReply = 0;
+	int inq_sent = 0;
+	int fail_recv = 0;
+	
+	while(1){
+		recv(m);
+		switch(m->type){
+			case 'R': if(state == 0){
+						state = 1;
+						
+						lockingRequest->pid = m->pid;
+						lockingRequest->time = m->time;
+						lockingRequest->type = m->type;
+
+						m_reply->pid = my_id;
+						m_reply->time = m->time;
+						m_reply->type = 'L';
+						
+						send(my_id, m->pid, m_reply);
+					
+					} else {
+						for(int i = 0; i < WAITQLENGTH; i++){
+							if(waitQ[i].allotted == 0){
+								waitQ[i].allotted = 1;
+								waitQ[i].m->pid = m->pid;
+								waitQ[i].m->time = m->time;
+								waitQ[i].m->type = m->type;
+								break;
+							}
+						}
+						int prec = 0;
+						if(precedes(lockingRequest, m)){
+							m_reply->pid = my_id;
+							m_reply->time = m->time;
+							m_reply->type = 'F';
+							send(my_id, m->pid, m_reply);
+							prec = 1;
+						}
+						for(int i = 0; i < WAITQLENGTH; i++){
+							if(waitQ[i].allotted == 1 && precedes(waitQ[i].m, m)){
+								m_reply->pid = my_id;
+								m_reply->time = m->time;
+								m_reply->type = 'F';
+								send(my_id, m->pid, m_reply);
+								prec = 1;
+								break;
+							}
+						}
+						if(prec == 1){
+							break;
+						} else {
+							if(inq_sent == 1)
+								break;
+							inq_sent = 1;
+							m_reply->pid = my_id;
+							m_reply->time = lockingRequest->time;
+							m_reply->type = 'I';
+							send(my_id, lockingRequest->pid, m_reply);
+						}
+					}
+					break;
+			case 'L': numLockedReply++;
+					if(numLockedReply >= req_size){
+						if(my_id != lockingRequest->pid)
+							printf(1, "Error L\n");
+						numLockedReply = 0;
+						m_reply->pid = my_id;
+						m_reply->time = lockingRequest->time;
+						m_reply->type = 'A';
+						send(my_id, child_id, m_reply);
+					}
+					break;
+			case 'F': fail_recv = 1;
+					break;
+			case 'S': int available = 0;
+					for(int i = 0; i < WAITQLENGTH; i++){
+						if(waitQ[i].allotted == 1){
+							if(available == 0 || precedes(waitQ[i].m, minRequest)){
+								available = 1;
+								minRequest = waitQ[i].m;
+							}
+						}
+					}
+					if(available == 0)
+						state = 0;
+					else{
+						for(int i = 0; i < WAITQLENGTH; i++){
+							if(waitQ[i].allotted == 1 && waitQ[i].m->pid == minRequest->pid){
+								waitQ[i].allotted = 0;
+								break;
+							}
+						}
+
+						lockingRequest->pid = minRequest->pid;
+						lockingRequest->time = minRequest->time;
+						lockingRequest->type = minRequest->type;
+
+						m_reply->pid = my_id;
+						m_reply->time = minRequest->time;
+						m_reply->type = 'L';
+						
+						send(my_id, minRequest->pid, m_reply);
+					}
+					break;
+			default: printf(1, "Error Type\n"); break;
+		}
+	}
+}
+
 void acquire1(){
 	struct message *m = (struct message*)malloc(MSGSIZE);
 	m->pid = my_id;
 	m->time = uptime();
 	m->type = 'R';
-	send_multi(my_id,req_set,(char*)m,req_size);
-	//while(numLockedReply < req_size);
+	for(int i = 0; i < req_size; i++){
+		send(my_id, req_set[i], m);
+	}
+	recv(m);
+	if(m->type != 'A' || m->pid != my_id)
+		printf(1, "Error Acquire\n");
 	free(m);
 }
 
 void release1(){
-
+	struct message *m = (struct message*)malloc(MSGSIZE);
+	m->pid = my_id;
+	m->time = uptime();
+	m->type = 'S';
+	for(int i = 0; i < req_size; i++){
+		send(my_id, req_set[i], m);
+	}
+	free(m);
 }
 
 int main(int argc, char *argv[])
 {
-	numRelease = 0;
-	numLockedReply = 0;
 	pid = (int*)malloc(MSGSIZE);
 	int P1id[P1], P2id[P2], P3id[P3];
-	
-	msgShared = (char*)malloc(MSGSIZE);
-	m_send = (struct message*)malloc(MSGSIZE);
-	state = 0;
 
 	for(int i = 0; i< P1; i++){
 		P1id[i] = fork();
 		if(P1id[i] == 0){
 			my_id = getpid();
-			//set signal handler
-			set_handle(sig_handler);
-			recv(pid);
-			//while(numRelease < P);
+			listen();
 			exit();
 		}
 		pid[i] = P1id[i];
@@ -115,11 +226,16 @@ int main(int argc, char *argv[])
 			set_handle(sig_handler);
 			recv(pid);
 			request_set(P1 + i);
-			acquire1();
-			//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
-			sleep(200);	//sleep for 2 sec
-			//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
-			release1();
+			child_id = fork();
+			if(child_id == 0){
+				acquire1();
+				//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
+				sleep(200);	//sleep for 2 sec
+				//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
+				release1();
+				exit();	
+			}
+			listen();
 			printf(1, "s:%d\n", state);			
 			exit();
 		}
@@ -134,10 +250,15 @@ int main(int argc, char *argv[])
 			set_handle(sig_handler);
 			recv(pid);
 			request_set(P1 + P2 + i);
-			acquire1();
-			//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
-			//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
-			release1();
+			child_id = fork();
+			if(child_id == 0){
+				acquire1();
+				//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
+				//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
+				release1();
+				exit();
+			}
+			listen();
 			exit();
 		}
 		pid[P1+P2+i] = P3id[i];
