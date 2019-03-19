@@ -690,8 +690,6 @@ send_multi(void)
 
   int* rec_list = (int*)rec_pids;
 
-  cprintf("send multi\n");
-
   struct proc *p;
 
   acquire(&ptable.lock);

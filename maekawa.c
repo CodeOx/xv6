@@ -20,7 +20,8 @@ int req_size;
 int my_id;
 
 volatile int numRelease;
-volatile int state;		//0: unlocked, 1: locked
+volatile int numLockedReply;
+volatile int state;		//0: unlocked, x: locked on pid x
 volatile char* msgShared;
 volatile char* msgShared_temp;
 volatile struct message *m_recv;
@@ -28,6 +29,7 @@ volatile struct message *m_send;
 
 //signal handler
 void sig_handler(char* msg){
+	printf(1,"here\n");
 	int i = MSGSIZE;
 	msgShared_temp = msgShared;
 	while(i--)
@@ -35,8 +37,9 @@ void sig_handler(char* msg){
 	m_recv = (struct message*)msgShared;
 	switch(m_recv->type){
 		case 'R': if(state == 0)
-					state = 1;
-				send_multi(my_id,req_set,(char*)m_send,1);
+					state = m_recv->pid;
+				break;
+		case 'L': numLockedReply++;
 				break;
 		default: break;
 	}
@@ -72,6 +75,7 @@ void acquire1(){
 	m->time = uptime();
 	m->type = 'R';
 	send_multi(my_id,req_set,(char*)m,req_size);
+	//while(numLockedReply < req_size);
 	free(m);
 }
 
@@ -82,6 +86,7 @@ void release1(){
 int main(int argc, char *argv[])
 {
 	numRelease = 0;
+	numLockedReply = 0;
 	pid = (int*)malloc(MSGSIZE);
 	int P1id[P1], P2id[P2], P3id[P3];
 	
