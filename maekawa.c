@@ -12,7 +12,7 @@
 struct message{
 	int pid;	//sender id
 	int time;	//timestamp
-	char type;	//R:request, L:locked, F:failed, I:inquire, Q:relenquish, S:released, A:access granted to child
+	char type;	//R:request, L:locked, F:failed, I:inquire, Q:relenquish, S:released, A:access granted to child, E:exit
 };
 
 struct waitQItem
@@ -26,6 +26,10 @@ int *req_set;
 int req_size;
 int my_id;
 int child_id;
+
+void printM(int id,struct message* m){
+	printf(1, "%d:pid = %d, %c\n", id, m->pid, m->type);
+}
 
 void request_set(int pno){
 	int row_size;
@@ -80,6 +84,7 @@ void listen(){
 	
 	while(1){
 		recv(m);
+		printM(my_id, m);
 		switch(m->type){
 			case 'R': if(state == 0){
 						state = 1;
@@ -164,8 +169,9 @@ void listen(){
 					}
 					break;
 			case 'S': numRelease++;
-					if(numRelease >= P2 + P3)
+					/*if(numRelease >= P2 + P3){
 						return;
+					}*/
 
 					inq_sent = 0;
 					
@@ -260,6 +266,7 @@ void listen(){
 					send(my_id, minRequest->pid, m_reply);
 
 					break;
+			case 'E':return;
 			default: printf(1, "Error Type : %c\n", m->type); break;
 		}
 	}
@@ -270,6 +277,7 @@ void acquire1(){
 	m->pid = my_id;
 	m->time = uptime();
 	m->type = 'R';
+	printM(my_id, m);
 	for(int i = 0; i < req_size; i++){
 		send(my_id, req_set[i], m);
 	}
@@ -295,10 +303,13 @@ int main(int argc, char *argv[])
 	pid = (int*)malloc(MSGSIZE);
 	int P1id[P1], P2id[P2], P3id[P3];
 
+	int globalParentId = getpid();
+
 	for(int i = 0; i< P1; i++){
 		P1id[i] = fork();
 		if(P1id[i] == 0){
 			my_id = getpid();
+			recv(pid);
 			listen();
 			exit();
 		}
@@ -314,13 +325,15 @@ int main(int argc, char *argv[])
 			child_id = fork();
 			if(child_id == 0){
 				acquire1();
-				//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
 				sleep(200);	//sleep for 2 sec
-				//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d released the lock at time %d\n", getpid(), uptime());
 				release1();
+				send(getpid(), globalParentId, pid);
 				exit();	
 			}
-			listen();	
+			listen();
+			wait();	
 			exit();
 		}
 		pid[P1+i] = P2id[i];
@@ -338,16 +351,31 @@ int main(int argc, char *argv[])
 				//printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
 				//printf(1, "%d released the lock at time %d\n", getpid(), uptime());
 				release1();
+				send(getpid(), globalParentId, pid);
 				exit();
 			}
+			wait();
 			listen();
 			exit();
 		}
 		pid[P1+P2+i] = P3id[i];
 	}
 
+	printf(1, "global parent = %d\n", getpid());
 	for(int i = 0; i < P; i++){
 		send(getpid(), pid[i], pid);
+	}
+
+	for(int i = 0; i < P2+P3; i++){
+		recv(pid);
+	}
+
+	struct message *m = (struct message*)malloc(MSGSIZE);
+	m->pid = globalParentId;
+	m->type = 'E';
+
+	for(int i = 0; i < P; i++){
+		send(globalParentId, pid[i], m);
 	}
 
 	for(int i = 0; i < P; i++){
