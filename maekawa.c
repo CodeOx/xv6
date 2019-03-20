@@ -5,9 +5,9 @@
 #define WAITQLENGTH 10
 #define MSGSIZE 100
 #define P 9
-#define P1 0
-#define P2 9
-#define P3 0
+#define P1 3
+#define P2 3
+#define P3 3
 
 struct message{
 	int pid;	//sender id
@@ -277,7 +277,7 @@ void acquire1(){
 	m->pid = my_id;
 	m->time = uptime();
 	m->type = 'R';
-	printM(my_id, m);
+	//printM(my_id, m);
 	for(int i = 0; i < req_size; i++){
 		send(my_id, req_set[i], m);
 	}
@@ -354,8 +354,8 @@ int main(int argc, char *argv[])
 				send(getpid(), globalParentId, pid);
 				exit();
 			}
-			wait();
 			listen();
+			wait();
 			exit();
 		}
 		pid[P1+P2+i] = P3id[i];
