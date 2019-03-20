@@ -4,10 +4,8 @@
 
 #define WAITQLENGTH 10
 #define MSGSIZE 100
-#define P 9
-#define P1 3
-#define P2 3
-#define P3 3
+
+int P,P1,P2,P3;
 
 struct message{
 	int pid;	//sender id
@@ -298,8 +296,59 @@ void release1(){
 	free(m);
 }
 
+void read_input(char* filename){
+	int fd = open(filename, 0);
+	char c;
+	P = 0; P1 = 0; P2 = 0; P3 = 0;
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		P = 10*P + (int)(c-'0');
+	}
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	P1 = 10*P1 + (int)(c-'0');
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		P1 = 10*P1 + (int)(c-'0');
+	}
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	P2 = 10*P2 + (int)(c-'0');
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		P2 = 10*P2 + (int)(c-'0');
+	}
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	P3 = 10*P3 + (int)(c-'0');
+	while(1){
+		int a = read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9 || a <= 0)
+			break;
+		P3 = 10*P3 + (int)(c-'0');
+	}
+	close(fd);
+}
+
 int main(int argc, char *argv[])
 {
+	if(argc < 2){
+		printf(1, "Error: no input file\n");
+		exit();
+	}
+
+	char *filename;
+	filename=argv[1];
+	read_input(filename);
+
+	printf(1, "P=%d,P1=%d,P2=%d,P3=%d\n", P, P1, P2, P3);
+
 	pid = (int*)malloc(MSGSIZE);
 	int P1id[P1], P2id[P2], P3id[P3];
 
