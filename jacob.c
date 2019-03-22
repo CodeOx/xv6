@@ -4,11 +4,14 @@
 
 #define MSGSIZE 100
 
-#define N 11
+/*#define N 11
 #define E 0.00001
 #define T 100.0
 #define P 6
-#define L 20000
+#define L 20000*/
+
+int N,P,L;
+float E,T;
 
 volatile int num;
 volatile char* msgShared;
@@ -16,8 +19,8 @@ volatile char* msgShared_temp;
 
 struct Data{
 	int line_no;
-	char padding[MSGSIZE - 4 - (4*N)];
-	float line[N];
+	//char padding[MSGSIZE - 4 - (4*N)];
+	float line[MSGSIZE-4];
 };
 
 //signal handler
@@ -35,8 +38,99 @@ float fabsm(float a){
 	return -1*a;
 return a;
 }
+
+void read_input(char* filename){
+	int fd = open(filename, 0);
+	char c;
+	float ratio;
+	N = 0; P = 0; L = 0; E = 0.0; T = 0.0;
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		N = 10*N + (int)(c-'0');
+	}
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	
+	E = 10*E + (int)(c-'0');
+	
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		E = 10*E + (int)(c-'0');
+	}
+	if((int)(c-'0') != -2){
+		printf(1, "Incorrect input file format\n");
+	}
+	ratio = 0.1;
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		E = E + ratio*(int)(c-'0');
+		ratio *= 0.1;
+	}
+
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	
+	T = 10*T + (int)(c-'0');
+	
+	while(1){
+		read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+			break;
+		T = 10*T + (int)(c-'0');
+	}
+
+	if((int)(c-'0') == -2){
+		ratio = 0.1;
+		while(1){
+			read(fd, &c, 1);
+			if((int)(c-'0') < 0 || (int)(c-'0') > 9)
+				break;
+			T = T + ratio*(int)(c-'0');
+			ratio *= 0.1;
+		}
+	}
+
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	P = 10*P + (int)(c-'0');
+	while(1){
+		int a = read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9 || a <= 0)
+			break;
+		P = 10*P + (int)(c-'0');
+	}
+
+	while((int)(c-'0') < 0 || (int)(c-'0') > 9)
+		read(fd, &c, 1);
+	L = 10*L + (int)(c-'0');
+	while(1){
+		int a = read(fd, &c, 1);
+		if((int)(c-'0') < 0 || (int)(c-'0') > 9 || a <= 0)
+			break;
+		L = 10*L + (int)(c-'0');
+	}
+	close(fd);
+}
+
 int main(int argc, char *argv[])
 {
+	if(argc < 2){
+		printf(1, "Error: no input file\n");
+		exit();
+	}
+
+	char *filename;
+	filename=argv[1];
+	read_input(filename);
+
+	//printf(1, "N=%d,E=%d,T=%d,P=%d,L=%d\n", N, (int)(10000*E), (int)T, P, L);
+
 	volatile float diff;
 	int i,j;
 	float mean;

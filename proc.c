@@ -618,7 +618,7 @@ send(void)
   }
 
   if((p->qtail + 1)%MAX_Q_LEN == p->qhead){
-    cprintf("send: message queue full\n");
+    cprintf("send: message queue full, sender:%d, receiver:%d\n", sender_pid, rec_pid);
     release(&ptable.lock);
     return -4;    //message queue full
   }  

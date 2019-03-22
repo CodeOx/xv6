@@ -191,8 +191,8 @@ UPROGS=\
 	_jacob\
 	_maekawa\
 
-fs.img: mkfs README arr assig2b.inp $(UPROGS)
-	./mkfs fs.img README arr assig2b.inp $(UPROGS)
+fs.img: mkfs README arr assig2a.inp assig2b.inp $(UPROGS)
+	./mkfs fs.img README arr assig2a.inp assig2b.inp $(UPROGS)
 
 -include *.d
 

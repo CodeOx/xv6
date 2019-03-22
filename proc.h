@@ -1,5 +1,5 @@
 #define MSGSIZE 100
-#define MAX_Q_LEN 20
+#define MAX_Q_LEN 100
 
 // Per-CPU state
 struct cpu {

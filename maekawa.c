@@ -1,3 +1,5 @@
+//maekawa assig2b.inp
+
 #include "types.h"
 #include "stat.h"
 #include "user.h"
