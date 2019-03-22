@@ -144,7 +144,7 @@ void listen(){
 								m_reply->time = m->time;
 								m_reply->type = 'F';
 								//send(my_id, m->pid, m_reply);
-								printf("LL2%d:%d\n", waitQ.m->pid, lockingRequest->pid);
+								//printf("LL2%d:%d\n", waitQ[i].m->pid, lockingRequest->pid);
 								write(fdFromPid(m->pid), m_reply, MSGSIZE);
 								prec = 1;
 								break;
@@ -236,6 +236,21 @@ void listen(){
 						
 						//send(my_id, minRequest->pid, m_reply);
 						write(fdFromPid(minRequest->pid), m_reply, MSGSIZE);
+
+						for(int i = 0; i < WAITQLENGTH; i++){
+							if(waitQ[i].allotted == 1){
+								for(int j = 0; j < WAITQLENGTH; j++){
+									if(enquireQ[j].allotted == 1 && enquireQ[j].m->pid == waitQ[i].m->pid){
+										enquireQ[j].allotted = 0;
+										inq_recv--;
+										m_reply->pid = my_id;
+										m_reply->time = waitQ[i].m->time;
+										m_reply->type = 'F';
+										write(fdFromPid(waitQ[i].m->pid), m_reply, MSGSIZE);
+									}
+								}
+							}
+						}
 					}
 					break;
 			case 'I': if(fail_recv){
