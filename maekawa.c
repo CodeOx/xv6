@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 	filename=argv[1];
 	read_input(filename);
 
-	printf(1, "P=%d,P1=%d,P2=%d,P3=%d\n", P, P1, P2, P3);
+	//printf(1, "P=%d,P1=%d,P2=%d,P3=%d\n", P, P1, P2, P3);
 
 	pid = (int*)malloc(MSGSIZE);
 	int P1id[P1], P2id[P2], P3id[P3];
@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
 		pid[P1+P2+i] = P3id[i];
 	}
 
-	printf(1, "global parent = %d\n", getpid());
+	//printf(1, "global parent = %d\n", getpid());
 	for(int i = 0; i < P; i++){
 		send(getpid(), pid[i], pid);
 	}
