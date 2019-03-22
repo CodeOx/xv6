@@ -145,6 +145,7 @@ void listen(){
 						if(my_id != lockingRequest->pid)
 							printf(1, "Error L\n");
 						numLockedReply = 0;
+						fail_recv = 0;
 						m_reply->pid = my_id;
 						m_reply->time = lockingRequest->time;
 						m_reply->type = 'A';
@@ -238,6 +239,7 @@ void listen(){
 							break;
 						}
 					}
+					inq_sent = 0;
 					int available1 = 0;
 					for(int i = 0; i < WAITQLENGTH; i++){
 						if(waitQ[i].allotted == 1){
@@ -376,9 +378,9 @@ int main(int argc, char *argv[])
 			child_id = fork();
 			if(child_id == 0){
 				acquire1();
-				printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d acquired the lock at time %d\n", my_id, uptime());
 				sleep(200);	//sleep for 2 sec
-				printf(1, "%d released the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d released the lock at time %d\n", my_id, uptime());
 				release1();
 				send(getpid(), globalParentId, pid);
 				exit();	
@@ -399,8 +401,8 @@ int main(int argc, char *argv[])
 			child_id = fork();
 			if(child_id == 0){
 				acquire1();
-				printf(1, "%d acquired the lock at time %d\n", getpid(), uptime());
-				printf(1, "%d released the lock at time %d\n", getpid(), uptime());
+				printf(1, "%d acquired the lock at time %d\n", my_id, uptime());
+				printf(1, "%d released the lock at time %d\n", my_id, uptime());
 				release1();
 				send(getpid(), globalParentId, pid);
 				exit();

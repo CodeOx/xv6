@@ -102,7 +102,7 @@ void listen(){
 	while(1){
 		//recv(m);
 		read(myFD, m, MSGSIZE);
-		//printM(my_id, m);
+		printM(my_id, m);
 		switch(m->type){
 			case 'R': if(state == 0){
 						state = 1;
@@ -134,6 +134,7 @@ void listen(){
 							m_reply->time = m->time;
 							m_reply->type = 'F';
 							//send(my_id, m->pid, m_reply);
+							printf("LL%d\n", lockingRequest->pid);
 							write(fdFromPid(m->pid), m_reply, MSGSIZE);
 							prec = 1;
 						}
@@ -143,6 +144,7 @@ void listen(){
 								m_reply->time = m->time;
 								m_reply->type = 'F';
 								//send(my_id, m->pid, m_reply);
+								printf("LL2%d:%d\n", waitQ.m->pid, lockingRequest->pid);
 								write(fdFromPid(m->pid), m_reply, MSGSIZE);
 								prec = 1;
 								break;
@@ -163,10 +165,12 @@ void listen(){
 					}
 					break;
 			case 'L': numLockedReply++;
+					printf("%d:%dhere\n", my_id, numLockedReply);
 					if(numLockedReply >= req_size){
 						if(my_id != lockingRequest->pid)
 							printf("Error L\n");
 						numLockedReply = 0;
+						fail_recv = 0;
 						m_reply->pid = my_id;
 						m_reply->time = lockingRequest->time;
 						m_reply->type = 'A';
@@ -264,6 +268,7 @@ void listen(){
 							break;
 						}
 					}
+					inq_sent = 0;
 					int available1 = 0;
 					for(int i = 0; i < WAITQLENGTH; i++){
 						if(waitQ[i].allotted == 1){
@@ -420,9 +425,9 @@ int main(int argc, char *argv[])
 			if(child_id == 0){
 				childFD = fd_child[2*(P1+i)];
 				acquire1();
-				printf("%d acquired the lock at time %d\n", getpid(), (unsigned)time(NULL));
+				printf("%d acquired the lock at time %d\n", my_id, (unsigned)time(NULL));
 				sleep(2);	//sleep for 2 sec
-				printf("%d released the lock at time %d\n", getpid(), (unsigned)time(NULL));
+				printf("%d released the lock at time %d\n", my_id, (unsigned)time(NULL));
 				release1();
 				//send(getpid(), globalParentId, pid);
 				write(globalParentFD[1], pid, MSGSIZE);
@@ -448,8 +453,8 @@ int main(int argc, char *argv[])
 			if(child_id == 0){
 				childFD = fd_child[2*(P1+P2+i)];
 				acquire1();
-				printf("%d acquired the lock at time %d\n", getpid(), (unsigned)time(NULL));
-				printf("%d released the lock at time %d\n", getpid(), (unsigned)time(NULL));
+				printf("%d acquired the lock at time %d\n", my_id, (unsigned)time(NULL));
+				printf("%d released the lock at time %d\n", my_id, (unsigned)time(NULL));
 				release1();
 				//send(getpid(), globalParentId, pid);
 				write(globalParentFD[1], pid, MSGSIZE);
