@@ -35,7 +35,7 @@ struct context {
   uint eip;
 };
 
-enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, WAITING };
 
 // Per-process state
 struct proc {
@@ -60,6 +60,8 @@ struct proc {
   int sig_received;             // Does the process receive a signal
   void* sig_msg;                // Message received in the last signal
   int local_sense;          //for barrier
+  int amicontainer;
+  int containerid;
 };
 
 // Process memory is laid out contiguously, low addresses first:

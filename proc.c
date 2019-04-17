@@ -222,6 +222,8 @@ fork(void)
   np->sig_received = 0;
   np->sig_msg = (char*)kalloc();
   np->local_sense = 0;
+  np->amicontainer=0;
+  np->containerid=-1;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -771,5 +773,119 @@ int barrier(void)
       while (b.flag != curproc->local_sense); // wait for flag
   }
   //cprintf("barrier returned: %d:%d\n", curproc->pid, b.flag);
+  return 0;
+}
+int container_table=[-1,-1,-1,-1,-1,-1,-1,-1]
+struct message
+{
+  int pid;
+  int num;
+  char name[16];  
+};
+int create_container(void)
+{
+  struct proc *p;
+  acquire(&ptable.lock);
+  p=myproc();
+  // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  //   if(p->pid==myproc()->pid) 
+  //   {
+  //     break;
+  //   }
+  // }
+  
+  for (int i = 0; i < 8; ++i)
+  {
+    if(container_table[i]==-1)
+    {
+      container_table[i]=a;
+      p->amicontainer=1;
+      p->containerid=i;
+      break;
+    }
+  }
+  release(&ptable.lock);
+  //add entry to container table
+  // cprintf("******************");
+  // cprintf("%x",a);
+  // // if (a==0)
+  // // {
+  //   cprintf("hello");
+  char *argv[1];
+  argv[0] ="ls";
+  exec("/ls",argv);
+  return p->containerid;
+}
+
+int join_container(int cid_to_join)
+{
+  struct proc *p;
+  acquire(&ptable.lock);
+  p=myproc();
+  p->containerid=cid_to_join;
+  struct message *m=(struct message*)malloc(MSGSIZE);
+  m-> pid= p->pid;
+  m->num = 1;
+  for(int i = 0; i < 16; i++){
+    m->name[i] = p->name[i];
+  }
+  struct proc *cp;
+  int pid_of_container=container_table[cid_to_join];
+  for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
+    if(cp->pid==pid_of_container) 
+    {
+      break;
+    }
+  }
+  send_signal(p->pid, m, cp);
+  release(&ptable.lock);
+  return 0;
+}
+
+
+int leave_container()
+{
+  struct proc *p;
+  acquire(&ptable.lock);
+  p=myproc();
+  p->containerid=-1;
+  struct message *m=(struct message*)malloc(MSGSIZE);
+  m-> pid= p->pid;
+  m->num = 2;
+  for(int i = 0; i < 16; i++){
+    m->name[i] = p->name[i];
+  }
+  struct proc *cp;
+  int pid_of_container=container_table[cid_to_join];
+  for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
+    if(cp->pid==pid_of_container) 
+    {
+      break;
+    }
+  }
+  send_signal(p->pid, m, cp);
+  release(&ptable.lock);
+  return 0;
+}
+
+
+int destroy_container(int a)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  container_table[a]=-1
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->containerid == a){
+      p->killed = 1;
+      // Wake process from sleep if necessary.
+      // if(p->state == SLEEPING)
+      p->state = RUNNABLE;
+      // release(&ptable.lock);
+      // return 0;
+    }
+  }
+  release(&ptable.lock);
   return 0;
 }
