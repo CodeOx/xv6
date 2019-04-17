@@ -136,9 +136,15 @@ int
 sys_create_container(void)
 {
   int a=fork();
-  if (a==0)
-  {
-    exec("ls",0);
-  }
+  // a++;
+  cprintf("******************");
+  cprintf("%x",a);
+  // if (a==0)
+  // {
+    cprintf("hello");
+    char *argv[1];
+    argv[0] ="ls";
+    exec("/ls",argv);
+  // }
   return 0;
 }
