@@ -50,6 +50,7 @@ void sig_handler(char* msg){
 }
 
 void ps1(){
+	printf(1, "mmm\n");
 	for(int i = 0; i < MAXPROGS; i++){
 		if(user_programs[i].pid != -1){
 			printf(1, "pid:%d name:%s\n", user_programs[i].pid, user_programs[i].name);
@@ -58,6 +59,7 @@ void ps1(){
 }
 
 void add_process(int pid, char* pname){
+	printf(1, "*** add process\n");
 	for(int i = 0; i < MAXPROGS; i++){
 		if(user_programs[i].state == UNUSED){
 			user_programs[i].pid = pid;
@@ -97,10 +99,11 @@ void switch1(){
 
 int
 main(int argc, char *argv[])
-{
+{	
 	msgShared = (char*)malloc(MSGSIZE);
 	struct message *m;
 	set_handle(sig_handler);
+	printf(1, "handle set\n");
 	msgRecvd = 0;
 	index_current_proc = 0;
 
@@ -112,8 +115,11 @@ main(int argc, char *argv[])
 	time_last_switch = uptime();
 
 	while(1){
+		//printf(1, "%d\n", msgRecvd);
 		if(msgRecvd == 1){
+			//printf(1, "here %d");
 			m = (struct message*)msgShared;
+			printf(1, "%d\n", m->num);
 			switch(m->num){
 				case 0: exit(); break;
 				case 1: add_process(m->pid, m->name); break;

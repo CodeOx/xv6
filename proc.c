@@ -29,7 +29,7 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-int container_table=[-1,-1,-1,-1,-1,-1,-1,-1]
+int container_table[]={-1,-1,-1,-1,-1,-1,-1,-1};
 struct message
 {
   int pid;
@@ -574,6 +574,19 @@ procdump(void)
   }
 }
 
+
+int 
+send_signal(int sender_pid, void* msg, struct proc* p)
+{
+  cprintf("yes\n");
+  if(p->sig_handle_set){
+    cprintf("ok\n");
+    p->sig_received = 1;
+    memmove(p->sig_msg, msg, MSGSIZE);
+  }
+  return 0;
+}
+
 //lists all currently running processes
 int
 ps(void)
@@ -585,7 +598,7 @@ ps(void)
   p=myproc();
   if (p->containerid!=-1)
   {
-    struct message *m=(struct message*)malloc(MSGSIZE);
+    struct message *m=(struct message*)kalloc();
     m-> pid= p->pid;
     m->num = 3;
     for(int i = 0; i < 16; i++){
@@ -699,15 +712,7 @@ recv(void)
   return 0;
 }
 
-int 
-send_signal(int sender_pid, void* msg, struct proc* p)
-{
-  if(p->sig_handle_set){
-    p->sig_received = 1;
-    memmove(p->sig_msg, msg, MSGSIZE);
-  }
-  return 0;
-}
+
 
 //send multicast message
 int
@@ -822,7 +827,7 @@ int create_container(void)
   {
     if(container_table[i]==-1)
     {
-      container_table[i]=a;
+      container_table[i]=p->pid;
       p->amicontainer=1;
       p->containerid=i;
       break;
@@ -847,7 +852,7 @@ int join_container(int cid_to_join)
   acquire(&ptable.lock);
   p=myproc();
   p->containerid=cid_to_join;
-  struct message *m=(struct message*)malloc(MSGSIZE);
+  struct message *m=(struct message*)kalloc();
   m-> pid= p->pid;
   m->num = 1;
   for(int i = 0; i < 16; i++){
@@ -861,6 +866,7 @@ int join_container(int cid_to_join)
       break;
     }
   }
+  cprintf("sending signal to proc %d", cp->pid);
   send_signal(p->pid, m, cp);
   release(&ptable.lock);
   return 0;
@@ -872,15 +878,16 @@ int leave_container()
   struct proc *p;
   acquire(&ptable.lock);
   p=myproc();
+  int cid_to_leave=p->containerid;
   p->containerid=-1;
-  struct message *m=(struct message*)malloc(MSGSIZE);
+  struct message *m=(struct message*)kalloc();
   m-> pid= p->pid;
   m->num = 2;
   for(int i = 0; i < 16; i++){
     m->name[i] = p->name[i];
   }
   struct proc *cp;
-  int pid_of_container=container_table[cid_to_join];
+  int pid_of_container=container_table[cid_to_leave];
   for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
     if(cp->pid==pid_of_container) 
     {
@@ -898,7 +905,7 @@ int destroy_container(int a)
   struct proc *p;
 
   acquire(&ptable.lock);
-  container_table[a]=-1
+  container_table[a]=-1;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->containerid == a){
