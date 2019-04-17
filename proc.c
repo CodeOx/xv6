@@ -578,9 +578,7 @@ procdump(void)
 int 
 send_signal(int sender_pid, void* msg, struct proc* p)
 {
-  cprintf("yes\n");
   if(p->sig_handle_set){
-    cprintf("ok\n");
     p->sig_received = 1;
     memmove(p->sig_msg, msg, MSGSIZE);
   }
@@ -591,34 +589,13 @@ send_signal(int sender_pid, void* msg, struct proc* p)
 int
 ps(void)
 {
+  int cid = myproc()->containerid;
   struct proc *p;
 
   acquire(&ptable.lock);
 
-  p=myproc();
-  if (p->containerid!=-1)
-  {
-    struct message *m=(struct message*)kalloc();
-    m-> pid= p->pid;
-    m->num = 3;
-    for(int i = 0; i < 16; i++){
-      m->name[i] = p->name[i];
-    }
-    struct proc *cp;
-    int pid_of_container=container_table[p->containerid];
-    for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
-      if(cp->pid==pid_of_container) 
-      {
-        break;
-      }
-    }
-    send_signal(p->pid, m, cp);
-    release(&ptable.lock);
-    return 0;
-  }
-
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING)
+    if(p->containerid == cid && (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING))
       cprintf("pid:%d name:%s\n", p->pid, p->name);
 
   release(&ptable.lock);
@@ -813,62 +790,30 @@ int barrier(void)
 
 int create_container(void)
 {
-  struct proc *p;
-  acquire(&ptable.lock);
-  p=myproc();
-  // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-  //   if(p->pid==myproc()->pid) 
-  //   {
-  //     break;
-  //   }
-  // }
-  
+  int cid = -1;
   for (int i = 0; i < 8; ++i)
   {
     if(container_table[i]==-1)
     {
-      container_table[i]=p->pid;
-      p->amicontainer=1;
-      p->containerid=i;
+      container_table[i]=1;
+      cid = i;
       break;
     }
   }
-  release(&ptable.lock);
-  //add entry to container table
-  // cprintf("******************");
-  // cprintf("%x",a);
-  // // if (a==0)
-  // // {
-  //   cprintf("hello");
-  char *argv[1];
-  argv[0] ="cont_mgr";
-  exec("/cont_mgr",argv);
-  return p->containerid;
+  return cid;
 }
 
-int join_container(int cid_to_join)
+int join_container(int cid)
 {
   struct proc *p;
+  
   acquire(&ptable.lock);
-  p=myproc();
-  p->containerid=cid_to_join;
-  struct message *m=(struct message*)kalloc();
-  m-> pid= p->pid;
-  m->num = 1;
-  for(int i = 0; i < 16; i++){
-    m->name[i] = p->name[i];
-  }
-  struct proc *cp;
-  int pid_of_container=container_table[cid_to_join];
-  for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
-    if(cp->pid==pid_of_container) 
-    {
-      break;
-    }
-  }
-  cprintf("sending signal to proc %d", cp->pid);
-  send_signal(p->pid, m, cp);
+  
+  p = myproc();
+  p -> containerid=cid;
+  
   release(&ptable.lock);
+  
   return 0;
 }
 
@@ -876,47 +821,31 @@ int join_container(int cid_to_join)
 int leave_container()
 {
   struct proc *p;
+  
   acquire(&ptable.lock);
-  p=myproc();
-  int cid_to_leave=p->containerid;
-  p->containerid=-1;
-  struct message *m=(struct message*)kalloc();
-  m-> pid= p->pid;
-  m->num = 2;
-  for(int i = 0; i < 16; i++){
-    m->name[i] = p->name[i];
-  }
-  struct proc *cp;
-  int pid_of_container=container_table[cid_to_leave];
-  for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
-    if(cp->pid==pid_of_container) 
-    {
-      break;
-    }
-  }
-  send_signal(p->pid, m, cp);
+  
+  p = myproc();
+  p->containerid = -1;
+  
   release(&ptable.lock);
+  
   return 0;
 }
 
 
-int destroy_container(int a)
+int destroy_container(int cid)
 {
-  struct proc *p;
+  container_table[cid]=-1;
 
+  struct proc *p;
   acquire(&ptable.lock);
-  container_table[a]=-1;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->containerid == a){
-      p->killed = 1;
-      // Wake process from sleep if necessary.
-      // if(p->state == SLEEPING)
-      p->state = RUNNABLE;
-      // release(&ptable.lock);
-      // return 0;
+    if(p->containerid == cid){
+      p->containerid = -1;
     }
   }
+
   release(&ptable.lock);
   return 0;
 }

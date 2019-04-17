@@ -134,8 +134,6 @@ sys_barrier(void)
 int 
 sys_create_container(void)
 {
-  int a=fork();
-  a++;
   return create_container();
 }
 
@@ -147,21 +145,14 @@ sys_join_container(void)
   {
     return -1;
   }
-  join_container(cid);
-  return 0;
+  return join_container(cid);
 }
 
 
 int 
 sys_leave_container(void)
 {
-  // int cid;
-  // if (argint(0,&cid)<0)
-  // {
-  //   return -1;
-  // }
-  leave_container();
-  return 0;
+  return leave_container();
 }
 
 int 
