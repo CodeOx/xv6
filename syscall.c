@@ -113,6 +113,8 @@ extern int sys_send_multi(void);
 extern int sys_set_handle(void);
 extern int sys_set_barrier(void);
 extern int sys_barrier(void);
+extern int sys_create_container(void);
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -146,6 +148,7 @@ static int (*syscalls[])(void) = {
 [SYS_set_handle] sys_set_handle,
 [SYS_set_barrier] sys_set_barrier,
 [SYS_barrier] sys_barrier,
+[SYS_create_container] sys_create_container,
 };
 
 extern int syscall_count[];
