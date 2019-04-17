@@ -29,6 +29,14 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+int container_table=[-1,-1,-1,-1,-1,-1,-1,-1]
+struct message
+{
+  int pid;
+  int num;
+  char name[16];  
+};
+
 void
 pinit(void)
 {
@@ -574,6 +582,28 @@ ps(void)
 
   acquire(&ptable.lock);
 
+  p=myproc();
+  if (p->containerid!=-1)
+  {
+    struct message *m=(struct message*)malloc(MSGSIZE);
+    m-> pid= p->pid;
+    m->num = 3;
+    for(int i = 0; i < 16; i++){
+      m->name[i] = p->name[i];
+    }
+    struct proc *cp;
+    int pid_of_container=container_table[p->containerid];
+    for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
+      if(cp->pid==pid_of_container) 
+      {
+        break;
+      }
+    }
+    send_signal(p->pid, m, cp);
+    release(&ptable.lock);
+    return 0;
+  }
+
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING)
       cprintf("pid:%d name:%s\n", p->pid, p->name);
@@ -775,13 +805,7 @@ int barrier(void)
   //cprintf("barrier returned: %d:%d\n", curproc->pid, b.flag);
   return 0;
 }
-int container_table=[-1,-1,-1,-1,-1,-1,-1,-1]
-struct message
-{
-  int pid;
-  int num;
-  char name[16];  
-};
+
 int create_container(void)
 {
   struct proc *p;
@@ -812,8 +836,8 @@ int create_container(void)
   // // {
   //   cprintf("hello");
   char *argv[1];
-  argv[0] ="ls";
-  exec("/ls",argv);
+  argv[0] ="cont_mgr";
+  exec("/cont_mgr",argv);
   return p->containerid;
 }
 
