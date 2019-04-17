@@ -31,3 +31,6 @@
 #define SYS_set_barrier 30
 #define SYS_barrier 31
 #define SYS_create_container 32
+#define SYS_join_container 33
+#define SYS_leave_container 34
+#define SYS_destroy_container 35

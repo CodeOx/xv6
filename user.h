@@ -34,6 +34,9 @@ int set_handle(void (*handle)());
 int set_barrier(int nproc);
 int barrier(int bnum);
 int create_container(void);
+int join_container(int cid);
+int leave_container(void);
+int destroy_container(int a);
 
 // ulib.c
 int stat(const char*, struct stat*);

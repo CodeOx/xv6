@@ -131,20 +131,52 @@ sys_barrier(void)
 {
   return barrier();
 }
-
 int 
 sys_create_container(void)
 {
   int a=fork();
   // a++;
-  cprintf("******************");
-  cprintf("%x",a);
-  // if (a==0)
-  // {
-    cprintf("hello");
-    char *argv[1];
-    argv[0] ="ls";
-    exec("/ls",argv);
-  // }
+  return create_container();
+}
+
+int 
+sys_join_container(void)
+{
+  int cid;
+  if (argint(0,&cid)<0)
+  {
+    return -1;
+  }
+  join_container(cid);
   return 0;
 }
+
+
+int 
+sys_leave_container(void)
+{
+  // int cid;
+  // if (argint(0,&cid)<0)
+  // {
+  //   return -1;
+  // }
+  leave_container();
+  return 0;
+}
+
+int 
+sys_destroy_container(void)
+{
+  int cid;
+  if (argint(0,&cid)<0)
+  {
+    return -1;
+  }
+  destroy_container(cid);
+  return 0;
+}
+
+
+
+//file handling in destroy container
+//ps then send signal, make sure that kernel does not di that depending on containerid
