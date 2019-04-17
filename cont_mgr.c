@@ -6,6 +6,8 @@
 #define MAXPROGS 50
 #define SWITCHTIME 100
 
+enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, WAITING };
+
 struct message{
 	int pid;	//process id
 	int num;	//system call
@@ -19,7 +21,7 @@ struct message{
 
 // Per-process state
 struct proc {
-//  enum procstate state;        // Process state
+    enum procstate state;        // Process state
 	int pid;                     // Process ID
 	char name[16];               // Process name (debugging)
 };
@@ -30,6 +32,7 @@ volatile int msgRecvd;
 
 struct proc user_programs[MAXPROGS]; 
 int pid_current_proc;
+int index_current_proc;
 int time_last_switch;
 int time_current;
 
@@ -56,8 +59,9 @@ void ps1(){
 
 void add_process(int pid, char* pname){
 	for(int i = 0; i < MAXPROGS; i++){
-		if(user_programs[i].pid != -1){
+		if(user_programs[i].state == UNUSED){
 			user_programs[i].pid = pid;
+			user_programs[i].state = WAITING;
 			for(int j = 0; j < 16; j++)
 				user_programs[i].name[j] = pname[j];
 			break;
@@ -69,13 +73,26 @@ void delete_process(int pid){
 	for(int i = 0; i < MAXPROGS; i++){
 		if(user_programs[i].pid == pid){
 			user_programs[i].pid = -1;
+			user_programs[i].state = UNUSED;
 			break;
 		}
 	}	
 }
 
 void switch1(){
+	int k = index_current_proc + 1;
+	if(user_programs[index_current_proc].state == RUNNABLE)
+		user_programs[index_current_proc].state = WAITING;
 	
+	for(int i = 0; i < MAXPROGS; i++){
+		if(user_programs[k].state == WAITING){
+			user_programs[k].state = RUNNABLE;
+			pid_current_proc = user_programs[k].pid;
+			index_current_proc = k;
+			break;
+		}
+		k = (k+1)%MAXPROGS;
+	}	
 }
 
 int
@@ -85,9 +102,11 @@ main(int argc, char *argv[])
 	struct message *m;
 	set_handle(sig_handler);
 	msgRecvd = 0;
+	index_current_proc = 0;
 
 	for(int i = 0; i < MAXPROGS; i++){
 		user_programs[i].pid = -1;
+		user_programs[i].state = UNUSED;
 	}
 
 	time_last_switch = uptime();
