@@ -4,9 +4,10 @@
 #include <sys/wait.h>
 #include <unistd.h>	
 #include <stdlib.h> 
-#include <time.h>
 #include <fcntl.h> 
 #include <sys/stat.h> 
+#include <time.h>
+#include <sys/time.h>
 
 #define WAITQLENGTH 10
 #define MSGSIZE 100
@@ -33,6 +34,15 @@ int my_id;
 int child_id;
 int myFD;
 int childFD;
+
+double get_wall_time(){
+    struct timeval time;
+    if (gettimeofday(&time,NULL)){
+        //  Handle error
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
 
 int fdFromPid(int pi){
 	for(int i = 0; i < P; i++){
@@ -102,7 +112,7 @@ void listen(){
 	while(1){
 		//recv(m);
 		read(myFD, m, MSGSIZE);
-		printM(my_id, m);
+		//printM(my_id, m);
 		switch(m->type){
 			case 'R': if(state == 0){
 						state = 1;
@@ -134,7 +144,7 @@ void listen(){
 							m_reply->time = m->time;
 							m_reply->type = 'F';
 							//send(my_id, m->pid, m_reply);
-							printf("LL%d\n", lockingRequest->pid);
+							//printf("LL%d\n", lockingRequest->pid);
 							write(fdFromPid(m->pid), m_reply, MSGSIZE);
 							prec = 1;
 						}
@@ -165,7 +175,7 @@ void listen(){
 					}
 					break;
 			case 'L': numLockedReply++;
-					printf("%d:%dhere\n", my_id, numLockedReply);
+					//printf("%d:%dhere\n", my_id, numLockedReply);
 					if(numLockedReply >= req_size){
 						if(my_id != lockingRequest->pid)
 							printf("Error L\n");
@@ -237,7 +247,7 @@ void listen(){
 						//send(my_id, minRequest->pid, m_reply);
 						write(fdFromPid(minRequest->pid), m_reply, MSGSIZE);
 
-						for(int i = 0; i < WAITQLENGTH; i++){
+						/*for(int i = 0; i < WAITQLENGTH; i++){
 							if(waitQ[i].allotted == 1){
 								for(int j = 0; j < WAITQLENGTH; j++){
 									if(enquireQ[j].allotted == 1 && enquireQ[j].m->pid == waitQ[i].m->pid){
@@ -250,7 +260,7 @@ void listen(){
 									}
 								}
 							}
-						}
+						}*/
 					}
 					break;
 			case 'I': if(fail_recv){
@@ -401,6 +411,8 @@ int main(int argc, char *argv[])
 
 	printf("P=%d,P1=%d,P2=%d,P3=%d\n", P, P1, P2, P3);
 
+	double wall0 = get_wall_time();
+
 	pid = (int*)malloc(MSGSIZE);
 	fd = (int*)malloc(sizeof(int)*2*P);
 	int P1id[P1], P2id[P2], P3id[P3];
@@ -512,6 +524,9 @@ int main(int argc, char *argv[])
 		}
 		printf("\n");
 	}*/
+	
+	double wall1 = get_wall_time();
+	printf("Time taken = %f\n", wall1-wall0);
 
 	exit(1);
 }

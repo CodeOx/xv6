@@ -5,6 +5,7 @@
 #include <unistd.h>	
 #include <stdlib.h> 
 #include <time.h>
+#include <sys/time.h>
 #include <fcntl.h> 
 #include <sys/stat.h> 
 
@@ -28,6 +29,16 @@ struct Data{
 	//char padding[MSGSIZE - 4 - (4*N)];
 	float line[MSGSIZE-4];
 };
+
+
+double get_wall_time(){
+    struct timeval time;
+    if (gettimeofday(&time,NULL)){
+        //  Handle error
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
 
 //signal handler
 void sig_handler(char* msg){
@@ -135,7 +146,9 @@ int main(int argc, char *argv[])
 	filename=argv[1];
 	read_input(filename);
 
-	//printf("N=%d,E=%d,T=%d,P=%d,L=%d\n", N, (int)(10000*E), (int)T, P, L);
+	printf("N=%d,E=%f,T=%f,P=%d,L=%d\n", N, E, T, P, L);
+
+	double wall0 = get_wall_time();
 
 	volatile float diff;
 	int i,j;
@@ -166,10 +179,6 @@ int main(int argc, char *argv[])
 	    pipe(&fd[2*i]);
 	    pipe(&diffFD[2*i]);
 	}
-
-	clock_t start_t, end_t;
- 	double cpu_time_used;
- 	start_t = clock();
 
 	/**************fork here****************/
 	for(p_no = 1; p_no < P; p_no++){
@@ -386,9 +395,8 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 
-	end_t = clock();
-	cpu_time_used = ((double) (end_t - start_t)) / CLOCKS_PER_SEC;
-	printf("Time used = %f\n", cpu_time_used);
+	double wall1 = get_wall_time();
+	printf("Time taken = %f\n", wall1-wall0);
 
 	exit(1);
 
