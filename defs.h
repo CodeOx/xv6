@@ -127,7 +127,7 @@ int 			send_multi(void);
 int 			set_handle(void);
 int 			set_barrier(void);
 int 			barrier(void);
-int 			create_container(void);
+int 			create_container(int);
 int 			join_container(int);
 int 			leave_container(void);
 int 			destroy_container(int);

@@ -104,3 +104,18 @@ memmove(void *vdst, const void *vsrc, int n)
     *dst++ = *src++;
   return vdst;
 }
+
+int 
+create_container1(void)
+{
+  int container_pid = fork();
+  if(container_pid == 0){
+    char *argv[1];
+    argv[0] ="cont_mgr";
+    exec("/cont_mgr",argv);
+  } else {
+    sleep(100);
+    return create_container(container_pid);
+  }
+  return 0;
+}

@@ -264,6 +264,9 @@ exit(void)
   struct proc *p;
   int fd;
 
+  if(curproc -> containerid != -1)
+    leave_container();
+
   if(curproc == initproc)
     panic("init exiting");
 
@@ -578,9 +581,7 @@ procdump(void)
 int 
 send_signal(int sender_pid, void* msg, struct proc* p)
 {
-  cprintf("yes\n");
   if(p->sig_handle_set){
-    cprintf("ok\n");
     p->sig_received = 1;
     memmove(p->sig_msg, msg, MSGSIZE);
   }
@@ -811,19 +812,19 @@ int barrier(void)
   return 0;
 }
 
-int create_container(void)
+int create_container(int container_pid)
 {
   struct proc *p;
-  acquire(&ptable.lock);
-  p=myproc();
-  // for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-  //   if(p->pid==myproc()->pid) 
-  //   {
-  //     break;
-  //   }
-  // }
   
-  for (int i = 0; i < 8; ++i)
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == container_pid && p->state != UNUSED){
+      break;
+    }
+  }
+
+  for(int i = 0; i < 8; ++i)
   {
     if(container_table[i]==-1)
     {
@@ -833,16 +834,8 @@ int create_container(void)
       break;
     }
   }
+
   release(&ptable.lock);
-  //add entry to container table
-  // cprintf("******************");
-  // cprintf("%x",a);
-  // // if (a==0)
-  // // {
-  //   cprintf("hello");
-  char *argv[1];
-  argv[0] ="cont_mgr";
-  exec("/cont_mgr",argv);
   return p->containerid;
 }
 
@@ -850,23 +843,22 @@ int join_container(int cid_to_join)
 {
   struct proc *p;
   acquire(&ptable.lock);
-  p=myproc();
-  p->containerid=cid_to_join;
-  struct message *m=(struct message*)kalloc();
-  m-> pid= p->pid;
-  m->num = 1;
+  p = myproc();
+  p->containerid = cid_to_join;
+  struct message *m = (struct message*)kalloc();
+  m -> pid= p -> pid;
+  m -> num = 1;
   for(int i = 0; i < 16; i++){
-    m->name[i] = p->name[i];
+    m -> name[i] = p -> name[i];
   }
   struct proc *cp;
-  int pid_of_container=container_table[cid_to_join];
+  int container_pid=container_table[cid_to_join];
   for(cp = ptable.proc; cp < &ptable.proc[NPROC]; cp++){
-    if(cp->pid==pid_of_container) 
+    if(cp->pid == container_pid) 
     {
       break;
     }
   }
-  cprintf("sending signal to proc %d", cp->pid);
   send_signal(p->pid, m, cp);
   release(&ptable.lock);
   return 0;

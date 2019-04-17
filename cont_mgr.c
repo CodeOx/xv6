@@ -4,6 +4,7 @@
 
 #define MSGSIZE 100
 #define MAXPROGS 50
+#define MAXMSG 10
 #define SWITCHTIME 100
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, WAITING };
@@ -26,9 +27,10 @@ struct proc {
 	char name[16];               // Process name (debugging)
 };
 
-volatile char* msgShared;
+volatile char* msgShared[MAXMSG];
 volatile char* msgShared_temp;
 volatile int msgRecvd;
+volatile int qtail=-1, qhead=-1;
 
 struct proc user_programs[MAXPROGS]; 
 int pid_current_proc;
@@ -41,16 +43,26 @@ int time_current;
 //can't do syscall here
 //can't use lock here, unaivailable lock doesn't return to scheduler
 void sig_handler(char* msg){
+	if((qtail + 1)%MAXMSG == qhead){
+		return;    //message queue full
+	}  
+
+	if(qhead == -1 && qtail == -1){
+		qhead = 0;
+		qtail = 0;
+	} else {
+		qtail = (qtail + 1)%MAXMSG;
+	}
+
 	int i = MSGSIZE;
-	msgShared_temp = msgShared;
+	msgShared_temp = msgShared[qtail];
 	while(i--)
 		*msgShared_temp++ = *msg++;
-	msgRecvd = 1;
+	msgRecvd++;
 	return;
 }
 
 void ps1(){
-	printf(1, "mmm\n");
 	for(int i = 0; i < MAXPROGS; i++){
 		if(user_programs[i].pid != -1){
 			printf(1, "pid:%d name:%s\n", user_programs[i].pid, user_programs[i].name);
@@ -59,7 +71,6 @@ void ps1(){
 }
 
 void add_process(int pid, char* pname){
-	printf(1, "*** add process\n");
 	for(int i = 0; i < MAXPROGS; i++){
 		if(user_programs[i].state == UNUSED){
 			user_programs[i].pid = pid;
@@ -100,10 +111,11 @@ void switch1(){
 int
 main(int argc, char *argv[])
 {	
-	msgShared = (char*)malloc(MSGSIZE);
+	for(int i = 0; i < MAXMSG; i++)
+		msgShared[i] = (char*)malloc(MSGSIZE);
 	struct message *m;
 	set_handle(sig_handler);
-	printf(1, "handle set\n");
+	//printf(1, "handle set\n");
 	msgRecvd = 0;
 	index_current_proc = 0;
 
@@ -115,19 +127,24 @@ main(int argc, char *argv[])
 	time_last_switch = uptime();
 
 	while(1){
-		//printf(1, "%d\n", msgRecvd);
-		if(msgRecvd == 1){
-			//printf(1, "here %d");
-			m = (struct message*)msgShared;
-			printf(1, "%d\n", m->num);
+		while(!(qtail == -1 && qhead == -1)){
+			printf(1, "### %d\n", msgRecvd);
+			m = (struct message*)msgShared[qhead];
+			printf(1, "** %d\n", m->num);
 			switch(m->num){
 				case 0: exit(); break;
 				case 1: add_process(m->pid, m->name); break;
 				case 2: delete_process(m->pid); break;
-				case 3: ps(); break;
+				case 3: ps1(); break;
 				default: break;
 			}
-			msgRecvd = 0;
+			
+			if(qhead == qtail){
+				qtail = -1; qhead = -1;
+			} else {
+				qhead = (qhead + 1)%MAXMSG;
+			}
+			msgRecvd--;
 		}
 
 		time_current = uptime();
