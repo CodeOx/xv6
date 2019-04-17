@@ -131,3 +131,14 @@ sys_barrier(void)
 {
   return barrier();
 }
+
+int 
+sys_create_container(void)
+{
+  int a=fork();
+  if (a==0)
+  {
+    exec("ls",0);
+  }
+  return 0;
+}

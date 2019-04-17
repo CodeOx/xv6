@@ -33,6 +33,7 @@ int send_multi( int sender_pid, int rec_pids[], void* msg, int lenght);
 int set_handle(void (*handle)());
 int set_barrier(int nproc);
 int barrier(int bnum);
+int create_container(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

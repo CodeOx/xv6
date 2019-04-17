@@ -127,6 +127,7 @@ int 			send_multi(void);
 int 			set_handle(void);
 int 			set_barrier(void);
 int 			barrier(void);
+int 			create_container(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
