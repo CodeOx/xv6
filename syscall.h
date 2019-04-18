@@ -34,3 +34,4 @@
 #define SYS_join_container 33
 #define SYS_leave_container 34
 #define SYS_destroy_container 35
+#define SYS_getcid 36

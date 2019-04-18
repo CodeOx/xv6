@@ -61,7 +61,7 @@ struct proc {
   void* sig_msg;                // Message received in the last signal
   int local_sense;          //for barrier
   int amicontainer;
-  int containerid;
+  int cid;
 };
 
 // Process memory is laid out contiguously, low addresses first:

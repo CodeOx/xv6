@@ -131,6 +131,7 @@ sys_barrier(void)
 {
   return barrier();
 }
+
 int 
 sys_create_container(void)
 {
@@ -165,6 +166,12 @@ sys_destroy_container(void)
   }
   destroy_container(cid);
   return 0;
+}
+
+int
+sys_getcid(void)
+{
+  return myproc()->cid;
 }
 
 

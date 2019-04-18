@@ -117,7 +117,7 @@ extern int sys_create_container(void);
 extern int sys_join_container(void);
 extern int sys_leave_container(void);
 extern int sys_destroy_container(void);
-
+extern int sys_getcid(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -155,6 +155,7 @@ static int (*syscalls[])(void) = {
 [SYS_join_container] sys_join_container,
 [SYS_leave_container] sys_leave_container,
 [SYS_destroy_container] sys_destroy_container,
+[SYS_getcid]  sys_getcid,
 };
 
 extern int syscall_count[];

@@ -29,6 +29,7 @@ ls(char *path)
   int fd;
   struct dirent de;
   struct stat st;
+  int cid = getcid();
 
   if((fd = open(path, 0)) < 0){
     printf(2, "ls: cannot open %s\n", path);
@@ -39,6 +40,12 @@ ls(char *path)
     printf(2, "ls: cannot stat %s\n", path);
     close(fd);
     return;
+  }
+
+  if(!(st.cid == 0 || st.cid == cid)){
+    printf(2, "ls: file/dir not in container %s cid:%d pid:%d reqcid:%d\n", path, st.cid, getpid(), cid);
+    close(fd);
+    return; 
   }
 
   switch(st.type){
@@ -63,7 +70,8 @@ ls(char *path)
         printf(1, "ls: cannot stat %s\n", buf);
         continue;
       }
-      printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+      if(st.cid == 0 || st.cid == cid)
+        printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
     }
     break;
   }

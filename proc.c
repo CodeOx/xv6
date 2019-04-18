@@ -165,6 +165,7 @@ userinit(void)
   p->sig_received = 0;
   p->sig_msg = (char*)kalloc();
   p->local_sense = 0;
+  p->cid = -1;
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -231,7 +232,7 @@ fork(void)
   np->sig_msg = (char*)kalloc();
   np->local_sense = 0;
   np->amicontainer=0;
-  np->containerid=-1;
+  np->cid=-1;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -589,13 +590,13 @@ send_signal(int sender_pid, void* msg, struct proc* p)
 int
 ps(void)
 {
-  int cid = myproc()->containerid;
+  int cid = myproc()->cid;
   struct proc *p;
 
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->containerid == cid && (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING))
+    if(p->cid == cid && (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING))
       cprintf("pid:%d name:%s\n", p->pid, p->name);
 
   release(&ptable.lock);
@@ -791,7 +792,7 @@ int barrier(void)
 int create_container(void)
 {
   int cid = -1;
-  for (int i = 0; i < 8; ++i)
+  for (int i = 1; i < 8; ++i)
   {
     if(container_table[i]==-1)
     {
@@ -810,7 +811,7 @@ int join_container(int cid)
   acquire(&ptable.lock);
   
   p = myproc();
-  p -> containerid=cid;
+  p->cid = cid;
   
   release(&ptable.lock);
   
@@ -825,7 +826,7 @@ int leave_container()
   acquire(&ptable.lock);
   
   p = myproc();
-  p->containerid = -1;
+  p->cid = -1;
   
   release(&ptable.lock);
   
@@ -841,8 +842,8 @@ int destroy_container(int cid)
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->containerid == cid){
-      p->containerid = -1;
+    if(p->cid == cid){
+      p->cid = -1;
     }
   }
 
