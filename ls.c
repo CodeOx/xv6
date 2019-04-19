@@ -42,10 +42,10 @@ ls(char *path)
     return;
   }
 
-  if(!(st.cid == 0 || st.cid == cid)){
-    printf(2, "ls: file/dir not in container %s cid:%d pid:%d reqcid:%d\n", path, st.cid, getpid(), cid);
+  if(!check_inode_container(cid, st.ino)){
+    printf(2, "ls: file/dir not in container %s\n", path);
     close(fd);
-    return; 
+    return;  
   }
 
   switch(st.type){
@@ -70,7 +70,7 @@ ls(char *path)
         printf(1, "ls: cannot stat %s\n", buf);
         continue;
       }
-      if(st.cid == 0 || st.cid == cid)
+      if(check_inode_container(cid, st.ino))
         printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
     }
     break;

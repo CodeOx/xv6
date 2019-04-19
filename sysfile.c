@@ -244,11 +244,10 @@ create(char *path, short type, short major, short minor)
   uint off;
   struct inode *ip, *dp;
   char name[DIRSIZ];
-
+  
   if((dp = nameiparent(path, name)) == 0)
     return 0;
   ilock(dp);
-
   if((ip = dirlookup(dp, name, &off)) != 0){
     iunlockput(dp);
     ilock(ip);
@@ -257,7 +256,6 @@ create(char *path, short type, short major, short minor)
     iunlockput(ip);
     return 0;
   }
-
   if((ip = ialloc(dp->dev, type)) == 0)
     panic("create: ialloc");
 
@@ -265,7 +263,6 @@ create(char *path, short type, short major, short minor)
   ip->major = major;
   ip->minor = minor;
   ip->nlink = 1;
-  ip->cid = myproc()->cid;
   iupdate(ip);
 
   if(type == T_DIR){  // Create . and .. entries.
@@ -278,6 +275,8 @@ create(char *path, short type, short major, short minor)
 
   if(dirlink(dp, name, ip->inum) < 0)
     panic("create: dirlink");
+
+  add_inode_container(myproc()->cid, ip->inum);
 
   iunlockput(dp);
 
@@ -443,4 +442,18 @@ sys_pipe(void)
   fd[0] = fd0;
   fd[1] = fd1;
   return 0;
+}
+
+/****** Container functions **********/
+int
+sys_check_inode_container(void)
+{
+  int cid, inode;
+
+  if(argint(0, &cid) < 0 || argint(1, &inode) < 0){
+    cprintf("sys_check_inode_container : invalid arguments\n");
+    return -1;
+  }
+
+  return check_inode_container(cid, inode);
 }

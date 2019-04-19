@@ -12,7 +12,7 @@ main(int argc ,char* argv[])
 	if(child == 0){
 		join_container(cid);
 		ps();
-		int fd = mkdir("testing111");
+		int fd = mkdir("yohoooooooo");
 		printf(1, "fd: %d\n", fd);
 		char *argv[] = {"ls", 0};
 		exec("/ls",argv);
@@ -21,5 +21,6 @@ main(int argc ,char* argv[])
 	}
 	
 	wait();
+	//unlink("yohoooooooo");
 	exit();
 }

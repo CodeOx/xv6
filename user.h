@@ -38,6 +38,7 @@ int join_container(int cid);
 int leave_container(void);
 int destroy_container(int a);
 int getcid(void);
+int check_inode_container(int cid, int inode);
 
 // ulib.c
 int stat(const char*, struct stat*);

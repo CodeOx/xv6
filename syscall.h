@@ -35,3 +35,4 @@
 #define SYS_leave_container 34
 #define SYS_destroy_container 35
 #define SYS_getcid 36
+#define SYS_check_inode_container 37

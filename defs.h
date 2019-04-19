@@ -52,6 +52,9 @@ struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
+void			init_ctable_inodes(uint dev);
+int 			check_inode_container(int cid, int inode);
+void			add_inode_container(int cid, int inode);
 
 // ide.c
 void            ideinit(void);
@@ -131,6 +134,7 @@ int 			create_container(void);
 int 			join_container(int);
 int 			leave_container(void);
 int 			destroy_container(int);
+void            cinit(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
