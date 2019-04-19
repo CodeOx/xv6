@@ -165,7 +165,7 @@ userinit(void)
   p->sig_received = 0;
   p->sig_msg = (char*)kalloc();
   p->local_sense = 0;
-  p->cid = -1;
+  p->cid = 0;
 
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
@@ -232,7 +232,7 @@ fork(void)
   np->sig_msg = (char*)kalloc();
   np->local_sense = 0;
   np->amicontainer=0;
-  np->cid=-1;
+  np->cid=0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -353,6 +353,8 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+int contsched=0;
+// int proc_ctr=0;
 void
 scheduler(void)
 {
@@ -367,9 +369,35 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
+      if(p->state != RUNNABLE||p->cid!=contsched)
         continue;
+    int endtab;
+    if (p==&ptable.proc[NPROC])
+    {
+      endtab=1;
+    }
+    else
+      endtab=0;
 
+    // endtab=(p==&ptable.proc[NPROC]);
+    cprintf("%d \n",endtab);
+    cprintf("*****************%d \n",contsched);
+    for (int i = 0; i < 9; ++i)
+    {
+      contsched=(contsched+1)%8;
+
+      // if (contsched==8)
+      // {
+      //   contsched=-1;
+      //   break;
+      // }
+
+      if (container_table[contsched]!=-1)
+      {
+        break;
+      }
+
+    }
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -804,7 +832,7 @@ int create_container(void)
   return cid;
 }
 
-int join_container(int cid)
+int join_container(int cid) //must be followed by a sleep so the container can start schdeuling (to schedule this out)
 {
   struct proc *p;
   
@@ -812,7 +840,7 @@ int join_container(int cid)
   
   p = myproc();
   p->cid = cid;
-  
+  // p-> state = WAITING;
   release(&ptable.lock);
   
   return 0;
@@ -826,7 +854,7 @@ int leave_container()
   acquire(&ptable.lock);
   
   p = myproc();
-  p->cid = -1;
+  p->cid = 0;
   
   release(&ptable.lock);
   

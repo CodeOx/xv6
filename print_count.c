@@ -11,6 +11,7 @@ main(int argc ,char* argv[])
 	int child = fork();
 	if(child == 0){
 		join_container(cid);
+		sleep(100);
 		ps();
 		int fd = mkdir("testing111");
 		printf(1, "fd: %d\n", fd);
