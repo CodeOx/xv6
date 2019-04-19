@@ -184,6 +184,8 @@ iinit(int dev)
  inodestart %d bmap start %d\n", sb.size, sb.nblocks,
           sb.ninodes, sb.nlog, sb.logstart, sb.inodestart,
           sb.bmapstart);
+
+  init_ctable_inodes(dev);
 }
 
 static struct inode* iget(uint dev, uint inum);
@@ -445,7 +447,7 @@ stati(struct inode *ip, struct stat *st)
   st->type = ip->type;
   st->nlink = ip->nlink;
   st->size = ip->size;
-  st->cid = ip->cid;
+  //st->cid = ip->cid;
 }
 
 //PAGEBREAK!
@@ -670,3 +672,80 @@ nameiparent(char *path, char *name)
 {
   return namex(path, 1, name);
 }
+
+/* Container functions defined here */
+#define MAXINODE 50
+#define MAXCONT 8
+
+struct cont{
+  int valid;
+  int cid;
+  int inodes[MAXINODE];
+};
+
+struct c_table {
+  struct spinlock lock;
+  struct cont cont[MAXCONT];
+};
+
+extern struct c_table ctable;
+
+void init_ctable_inodes(uint dev){
+  ctable.cont[0].valid = 1;
+  ctable.cont[0].cid = 0;
+
+  for(int i = 0; i < MAXINODE; i++){
+    ctable.cont[0].inodes[i] = -1;
+  }
+
+  int index = 0;
+
+  int inum;
+  struct buf *bp;
+  struct dinode *dip;
+
+  for(inum = 1; inum < sb.ninodes; inum++){
+    bp = bread(dev, IBLOCK(inum, sb));
+    dip = (struct dinode*)bp->data + inum%IPB;
+    if(dip->type != 0){  // not a free inode
+      //cprintf("c init : %d\n", inum);
+      ctable.cont[0].inodes[index] = inum;
+      index++;
+    }
+    brelse(bp);
+  }
+}
+
+int check_inode_container(int cid, int inode){
+  if(ctable.cont[cid].valid == 0){
+    cprintf("check_inode_container : invalid container id : %d\n", cid);
+    return -1;
+  }
+
+  for(int i = 0; i < MAXINODE; i++){
+    if(ctable.cont[cid].inodes[i] == inode){
+      return 1;
+    }
+  }
+
+  //cprintf("check inode : %d cont : %d\n", inode, cid);
+
+  return 0;
+}
+
+void add_inode_container(int cid, int inode){
+  if(ctable.cont[cid].valid == 0){
+    cprintf("add_inode_container : invalid container id : %d\n", cid);
+    return;
+  }
+
+  for(int i = 0; i < MAXINODE; i++){
+    if(ctable.cont[cid].inodes[i] == -1){
+      ctable.cont[cid].inodes[i] = inode;
+      return;
+    }
+  }
+
+  //cprintf("add inode : %d cont : %d\n", inode, cid);
+}
+/************************************/

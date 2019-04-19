@@ -7,6 +7,9 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define MAXCONT 8
+#define MAXINODE 50
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -29,13 +32,26 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-int container_table[]={-1,-1,-1,-1,-1,-1,-1,-1};
-struct message
-{
-  int pid;
-  int num;
-  char name[16];  
+/* Container table defined here */
+struct cont{
+  int valid;
+  int cid;
+  int inodes[MAXINODE];
 };
+
+struct c_table {
+  struct spinlock lock;
+  struct cont cont[MAXCONT];
+} ctable;
+
+
+void
+cinit(void)
+{
+  initlock(&ctable.lock, "ctable");
+}
+
+/*******************************/
 
 void
 pinit(void)
@@ -819,12 +835,16 @@ int barrier(void)
 
 int create_container(void)
 {
-  int cid = -1;
-  for (int i = 1; i < 8; ++i)
+  int cid = 0;
+  for (int i = 1; i < MAXCONT; ++i)
   {
-    if(container_table[i]==-1)
+    if(ctable.cont[i].valid == 0)
     {
-      container_table[i]=1;
+      ctable.cont[i].valid = 1;
+      ctable.cont[i].cid = i;
+      for(int j = 0; j < MAXINODE; j++){
+        ctable.cont[i].inodes[j] = ctable.cont[0].inodes[j];
+      }
       cid = i;
       break;
     }
@@ -864,14 +884,14 @@ int leave_container()
 
 int destroy_container(int cid)
 {
-  container_table[cid]=-1;
+  ctable.cont[cid].valid = 0;
 
   struct proc *p;
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->cid == cid){
-      p->cid = -1;
+      p->cid = 0;
     }
   }
 
