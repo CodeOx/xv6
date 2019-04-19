@@ -37,6 +37,7 @@ struct cont{
   int valid;
   int cid;
   int inodes[MAXINODE];
+  int numproc;
 };
 
 struct c_table {
@@ -264,6 +265,7 @@ fork(void)
 
   acquire(&ptable.lock);
 
+  ctable.cont[0].numproc++;
   np->state = RUNNABLE;
 
   release(&ptable.lock);
@@ -381,24 +383,11 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
+    // cprintf("*\n");
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE||p->cid!=contsched)
-        continue;
-    int endtab;
-    if (p==&ptable.proc[NPROC])
-    {
-      endtab=1;
-    }
-    else
-      endtab=0;
-
-    // endtab=(p==&ptable.proc[NPROC]);
-    cprintf("%d \n",endtab);
-    cprintf("*****************%d \n",contsched);
-    for (int i = 0; i < 9; ++i)
+    // int flag = 0;
+    for (int i = 0; i < 8; ++i)
     {
       contsched=(contsched+1)%8;
 
@@ -407,13 +396,37 @@ scheduler(void)
       //   contsched=-1;
       //   break;
       // }
+      // cprintf("at contsched=%d valid=%d numproc=%d", contsched,ctable.cont[contsched].valid,ctable.cont[contsched].numproc);
 
-      if (container_table[contsched]!=-1)
+      if (ctable.cont[contsched].valid == 1 && ctable.cont[contsched].numproc >0)
       {
+        // cprintf("became %d \n", contsched);
         break;
       }
-
     }
+    
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE||p->cid!=contsched)
+      {
+        // cprintf("cid %d \n", p->cid);
+        continue;
+      }
+      // flag = 1;
+    // int endtab;
+    // if (p==&ptable.proc[NPROC])
+    // {
+    //   endtab=1;
+    // }
+    // else
+    //   endtab=0;
+    // endtab++;
+    // endtab=(p==&ptable.proc[NPROC]);
+    // cprintf("%d \n",endtab);
+    // cprintf("*****************%d \n",contsched);
+    // cprintf("schedule: %d cid %d \n",p->pid, p->cid);
+    
+
+    // cprintf("last scheduled proces: %d",p->pid);
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -842,6 +855,8 @@ int create_container(void)
     {
       ctable.cont[i].valid = 1;
       ctable.cont[i].cid = i;
+      ctable.cont[i].numproc = 0;
+
       for(int j = 0; j < MAXINODE; j++){
         ctable.cont[i].inodes[j] = ctable.cont[0].inodes[j];
       }
@@ -859,7 +874,10 @@ int join_container(int cid) //must be followed by a sleep so the container can s
   acquire(&ptable.lock);
   
   p = myproc();
+  ctable.cont[p->cid].numproc--;
   p->cid = cid;
+  ctable.cont[cid].numproc++;
+  cprintf("**************%d\n", ctable.cont[cid].numproc);
   // p-> state = WAITING;
   release(&ptable.lock);
   
@@ -874,6 +892,8 @@ int leave_container()
   acquire(&ptable.lock);
   
   p = myproc();
+  ctable.cont[p->cid].numproc--;
+  ctable.cont[0].numproc++;
   p->cid = 0;
   
   release(&ptable.lock);

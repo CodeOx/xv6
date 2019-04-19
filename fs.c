@@ -681,6 +681,7 @@ struct cont{
   int valid;
   int cid;
   int inodes[MAXINODE];
+  int numproc;
 };
 
 struct c_table {
@@ -693,6 +694,7 @@ extern struct c_table ctable;
 void init_ctable_inodes(uint dev){
   ctable.cont[0].valid = 1;
   ctable.cont[0].cid = 0;
+  ctable.cont[0].numproc = 2;
 
   for(int i = 0; i < MAXINODE; i++){
     ctable.cont[0].inodes[i] = -1;
