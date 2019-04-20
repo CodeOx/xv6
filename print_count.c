@@ -11,8 +11,12 @@ main(int argc ,char* argv[])
 	int child = fork();
 	if(child == 0){
 		join_container(cid);
+		printf(1,"yaha hooo\n");
+		// sleep(100);
+		printf(1,"yaha\n");
+
 		ps();
-		int fd = mkdir("yohoooooooo");
+		int fd = mkdir("yoho");
 		printf(1, "fd: %d\n", fd);
 		char *argv[] = {"ls", 0};
 		exec("/ls",argv);

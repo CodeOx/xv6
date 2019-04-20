@@ -684,6 +684,7 @@ struct cont{
   char* name_mapping_in[MAXINODE];  //filename in container
   char* name_mapping_out[MAXINODE]; //global filename
   int num_name_mapping;
+  int numproc;
 };
 
 struct c_table {
@@ -697,6 +698,7 @@ void init_ctable_inodes(uint dev){
   ctable.cont[0].valid = 1;
   ctable.cont[0].cid = 0;
   ctable.cont[0].num_name_mapping = 0;
+  ctable.cont[0].numproc = 2;
 
   for(int i = 0; i < MAXINODE; i++){
     ctable.cont[0].inodes[i] = -1;

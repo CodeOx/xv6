@@ -40,6 +40,7 @@ struct cont{
   char* name_mapping_in[MAXINODE];  //filename in container
   char* name_mapping_out[MAXINODE]; //global filename
   int num_name_mapping;
+  int numproc;
 };
 
 struct c_table {
@@ -267,6 +268,7 @@ fork(void)
 
   acquire(&ptable.lock);
 
+  ctable.cont[0].numproc++;
   np->state = RUNNABLE;
 
   release(&ptable.lock);
@@ -301,6 +303,8 @@ exit(void)
   curproc->cwd = 0;
 
   acquire(&ptable.lock);
+
+  ctable.cont[curproc->cid].numproc--;
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
@@ -372,6 +376,8 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+int contsched=0;
+
 void
 scheduler(void)
 {
@@ -382,16 +388,24 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+    
+    for (int i = 0; i < 8; ++i){
+      contsched=(contsched+1)%8;
+      if (ctable.cont[contsched].valid == 1 && ctable.cont[contsched].numproc >0){
+        break;
+      }
+    }
+    
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
+      if(p->state != RUNNABLE||p->cid!=contsched){
         continue;
+      }
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
@@ -817,6 +831,8 @@ int create_container(void)
     {
       ctable.cont[i].valid = 1;
       ctable.cont[i].cid = i;
+      ctable.cont[i].numproc = 0;
+
       for(int j = 0; j < MAXINODE; j++){
         ctable.cont[i].inodes[j] = ctable.cont[0].inodes[j];
       }
@@ -835,8 +851,10 @@ int join_container(int cid)
   acquire(&ptable.lock);
   
   p = myproc();
+  ctable.cont[p->cid].numproc--;
   p->cid = cid;
-  
+  ctable.cont[cid].numproc++;
+
   release(&ptable.lock);
   
   return 0;
@@ -850,7 +868,9 @@ int leave_container()
   acquire(&ptable.lock);
   
   p = myproc();
+  ctable.cont[p->cid].numproc--;
   p->cid = 0;
+  ctable.cont[0].numproc++;
   
   release(&ptable.lock);
   
