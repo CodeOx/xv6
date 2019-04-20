@@ -299,7 +299,7 @@ sys_open(void)
   /* Changes for Copy-on-Write */
   int mapping_exist = get_container_path(path, path);
 
-  if((omode & O_WRONLY) || (omode & O_RDWR)){
+  if((!(omode & O_CREATE)) && ((omode & O_WRONLY) || (omode & O_RDWR))){
     if((myproc()-> cid != 0) && check_global_file(path) && !(mapping_exist)){
       newpath = create_local_copy(path);
       ip = create(newpath, T_FILE, 0, 0);
@@ -308,6 +308,7 @@ sys_open(void)
         end_op();
         return -1;
       }
+      iunlockput(ip);
       duplicate(path, newpath);
       add_inode_container(myproc()->cid, ip->inum);
       path = newpath;
@@ -324,6 +325,7 @@ sys_open(void)
     }
   } else {
     if((ip = namei(path)) == 0){
+      //cprintf("sys_open : error namei path = %s\n", path);
       end_op();
       return -1;
     }

@@ -767,10 +767,10 @@ int get_container_path(char* global_path, char* container_path){
   }
 
   for(int i = 0; i < ctable.cont[cid].num_name_mapping; i++){
-    cprintf("get_container_path\n");
-    cprintf("%s\n", ctable.cont[cid].name_mapping_in[i]);
-    cprintf("%s\n", ctable.cont[cid].name_mapping_out[i]);
-    cprintf("%d\n", namecmp(ctable.cont[cid].name_mapping_in[i], path));
+    //cprintf("get_container_path\n");
+    //cprintf("%s\n", ctable.cont[cid].name_mapping_in[i]);
+    //cprintf("%s\n", ctable.cont[cid].name_mapping_out[i]);
+    //cprintf("%d\n", namecmp(ctable.cont[cid].name_mapping_in[i], path));
 
     if(namecmp(ctable.cont[cid].name_mapping_in[i], path) == 0){
       container_path = ctable.cont[cid].name_mapping_out[i];
@@ -795,6 +795,7 @@ int check_global_file(char* path){
   for(int i = 0; i < MAXINODE; i++){
     if(ctable.cont[0].inodes[i] == inode){
       end_op();
+      cprintf("check_global_file : global\n");
       return 1;
     }
   }
@@ -831,12 +832,15 @@ char* create_local_copy(char* path){
   strncpy(ctable.cont[cid].name_mapping_in[index], path, DIRSIZ);
   strncpy(ctable.cont[cid].name_mapping_out[index], path, DIRSIZ);
   int end = 0;
-  while(ctable.cont[cid].name_mapping_out[index][end] != '\0'){}
+  while(ctable.cont[cid].name_mapping_out[index][end] != '\0'){end++;}
   ctable.cont[cid].name_mapping_out[index][end] = '_';
   ctable.cont[cid].name_mapping_out[index][end+1] = cid + '0';
   ctable.cont[cid].name_mapping_out[index][end+2] = '\0';
   
   ctable.cont[cid].num_name_mapping++;
+
+  //cprintf("create_local_copy : old name = %s\n", ctable.cont[cid].name_mapping_in[index]);
+  //cprintf("create_local_copy : new name = %s\n", ctable.cont[cid].name_mapping_out[index]);
 
   return ctable.cont[cid].name_mapping_out[index];
 
@@ -845,12 +849,12 @@ char* create_local_copy(char* path){
 
 void duplicate(char* path, char* newpath)
 {
+  //cprintf("duplicate : old path = %s\n", path);
+  //cprintf("duplicate : new path = %s\n", newpath);
   struct inode *ip, *newip;
   char buf[4096];
   int roff = 0, woff = 0;
   int nread;
-
-  begin_op();
 
   if((ip = namei(path)) == 0 || (newip = namei(newpath)) == 0){
     cprintf("duplicate : cannot open inode\n");
@@ -860,7 +864,7 @@ void duplicate(char* path, char* newpath)
 
   ilock(ip);
   ilock(newip);
-  
+
   while((nread = readi(ip, buf, roff, sizeof buf)) > 0){
     roff += nread;
     char *out_ptr = buf;
@@ -882,7 +886,5 @@ void duplicate(char* path, char* newpath)
 
   iunlock(newip);
   iunlock(ip);
-
-  end_op();
 }
 /************************************/
