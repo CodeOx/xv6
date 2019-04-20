@@ -37,6 +37,9 @@ struct cont{
   int valid;
   int cid;
   int inodes[MAXINODE];
+  char* name_mapping_in[MAXINODE];  //filename in container
+  char* name_mapping_out[MAXINODE]; //global filename
+  int num_name_mapping;
 };
 
 struct c_table {
@@ -817,6 +820,7 @@ int create_container(void)
       for(int j = 0; j < MAXINODE; j++){
         ctable.cont[i].inodes[j] = ctable.cont[0].inodes[j];
       }
+      ctable.cont[i].num_name_mapping = 0;
       cid = i;
       break;
     }

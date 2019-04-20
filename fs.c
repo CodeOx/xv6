@@ -681,6 +681,9 @@ struct cont{
   int valid;
   int cid;
   int inodes[MAXINODE];
+  char* name_mapping_in[MAXINODE];  //filename in container
+  char* name_mapping_out[MAXINODE]; //global filename
+  int num_name_mapping;
 };
 
 struct c_table {
@@ -693,6 +696,7 @@ extern struct c_table ctable;
 void init_ctable_inodes(uint dev){
   ctable.cont[0].valid = 1;
   ctable.cont[0].cid = 0;
+  ctable.cont[0].num_name_mapping = 0;
 
   for(int i = 0; i < MAXINODE; i++){
     ctable.cont[0].inodes[i] = -1;
@@ -747,5 +751,22 @@ void add_inode_container(int cid, int inode){
   }
 
   //cprintf("add inode : %d cont : %d\n", inode, cid);
+}
+
+char* get_container_path(char* path){
+  int cid = myproc()->cid;
+
+  if(ctable.cont[cid].valid == 0){
+    cprintf("get_container_path : invalid container id : %d\n", cid);
+    return 0;
+  }
+
+  for(int i = 0; i < ctable.cont[cid].num_name_mapping; i++){
+    cprintf("%s\n", ctable.cont[cid].name_mapping_in[i]);
+    cprintf("%s\n", ctable.cont[cid].name_mapping_out[i]);
+    cprintf("%d\n", namecmp(ctable.cont[cid].name_mapping_in[i], path));
+  }
+
+  return path;
 }
 /************************************/

@@ -294,6 +294,8 @@ sys_open(void)
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
 
+  path = get_container_path(path);
+
   begin_op();
 
   if(omode & O_CREATE){
