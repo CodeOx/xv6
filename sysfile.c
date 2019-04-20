@@ -309,6 +309,7 @@ sys_open(void)
         return -1;
       }
       duplicate(path, newpath);
+      add_inode_container(myproc()->cid, ip->inum);
       path = newpath;
     }
   }
