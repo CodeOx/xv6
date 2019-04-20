@@ -674,6 +674,8 @@ nameiparent(char *path, char *name)
 }
 
 /* Container functions defined here */
+/* Note : Deleteion of files/dir in container not handled */
+/* Note : Copy-on-Write works only for files, doesn't handle directories */
 #define MAXINODE 50
 #define MAXCONT 8
 
@@ -755,8 +757,9 @@ void add_inode_container(int cid, int inode){
   //cprintf("add inode : %d cont : %d\n", inode, cid);
 }
 
-char* get_container_path(char* path){
+int get_container_path(char* global_path, char* container_path){
   int cid = myproc()->cid;
+  char* path = global_path;
 
   if(ctable.cont[cid].valid == 0){
     cprintf("get_container_path : invalid container id : %d\n", cid);
@@ -764,11 +767,122 @@ char* get_container_path(char* path){
   }
 
   for(int i = 0; i < ctable.cont[cid].num_name_mapping; i++){
+    cprintf("get_container_path\n");
     cprintf("%s\n", ctable.cont[cid].name_mapping_in[i]);
     cprintf("%s\n", ctable.cont[cid].name_mapping_out[i]);
     cprintf("%d\n", namecmp(ctable.cont[cid].name_mapping_in[i], path));
+
+    if(namecmp(ctable.cont[cid].name_mapping_in[i], path) == 0){
+      container_path = ctable.cont[cid].name_mapping_out[i];
+      return 1;
+    }
   }
 
-  return path;
+  return 0;
+}
+
+int check_global_file(char* path){
+  struct inode *ip;
+
+  begin_op();
+  if((ip = namei(path)) == 0){
+    end_op();
+    cprintf("check_global_file : error namei\n");
+    return -1;
+  }
+
+  int inode = ip->inum;
+  for(int i = 0; i < MAXINODE; i++){
+    if(ctable.cont[0].inodes[i] == inode){
+      end_op();
+      return 1;
+    }
+  }
+
+  end_op();
+  return 0;
+}
+
+char* create_local_copy(char* path){
+  struct inode *ip;
+  int cid = myproc()->cid;
+
+  begin_op();
+  if((ip = namei(path)) == 0){
+    end_op();
+    cprintf("create_local_copy : error namei\n");
+    return 0;
+  }
+
+  int inode = ip->inum;
+  end_op();
+
+  for(int i = 0; i < MAXINODE; i++){
+    if(ctable.cont[cid].inodes[i] == inode){
+      ctable.cont[cid].inodes[i] = -1;
+      break;
+    }
+  }
+
+  int index = ctable.cont[cid].num_name_mapping;
+
+  ctable.cont[cid].name_mapping_in[index] = kalloc();
+  ctable.cont[cid].name_mapping_out[index] = kalloc();
+  strncpy(ctable.cont[cid].name_mapping_in[index], path, DIRSIZ);
+  strncpy(ctable.cont[cid].name_mapping_out[index], path, DIRSIZ);
+  int end = 0;
+  while(ctable.cont[cid].name_mapping_out[index][end] != '\0'){}
+  ctable.cont[cid].name_mapping_out[index][end] = '_';
+  ctable.cont[cid].name_mapping_out[index][end+1] = cid + '0';
+  ctable.cont[cid].name_mapping_out[index][end+2] = '\0';
+  
+  ctable.cont[cid].num_name_mapping++;
+
+  return ctable.cont[cid].name_mapping_out[index];
+
+  return 0;
+}
+
+void duplicate(char* path, char* newpath)
+{
+  struct inode *ip, *newip;
+  char buf[4096];
+  int roff = 0, woff = 0;
+  int nread;
+
+  begin_op();
+
+  if((ip = namei(path)) == 0 || (newip = namei(newpath)) == 0){
+    cprintf("duplicate : cannot open inode\n");
+    end_op();
+    return;
+  }
+
+  ilock(ip);
+  ilock(newip);
+  
+  while((nread = readi(ip, buf, roff, sizeof buf)) > 0){
+    roff += nread;
+    char *out_ptr = buf;
+    int nwritten;
+
+    do{
+      nwritten = writei(newip, out_ptr, woff, nread);
+      woff += nwritten;
+      if(nwritten >= 0){
+          nread -= nwritten;
+          out_ptr += nwritten;
+      }
+    } while(nread > 0);
+  }
+
+  if (nread != 0){
+    cprintf("duplicate : error nread not 0\n");
+  }
+
+  iunlock(newip);
+  iunlock(ip);
+
+  end_op();
 }
 /************************************/

@@ -286,7 +286,7 @@ create(char *path, short type, short major, short minor)
 int
 sys_open(void)
 {
-  char *path;
+  char *path, *newpath;
   int fd, omode;
   struct file *f;
   struct inode *ip;
@@ -294,9 +294,26 @@ sys_open(void)
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
 
-  path = get_container_path(path);
-
   begin_op();
+
+  /* Changes for Copy-on-Write */
+  int mapping_exist = get_container_path(path, path);
+
+  if((omode & O_WRONLY) || (omode & O_RDWR)){
+    if((myproc()-> cid != 0) && check_global_file(path) && !(mapping_exist)){
+      newpath = create_local_copy(path);
+      ip = create(newpath, T_FILE, 0, 0);
+      if(ip == 0){
+        cprintf("sys_open : error duplicating file\n");
+        end_op();
+        return -1;
+      }
+      duplicate(path, newpath);
+      path = newpath;
+    }
+  }
+
+  /*****************************/
 
   if(omode & O_CREATE){
     ip = create(path, T_FILE, 0, 0);

@@ -55,7 +55,10 @@ int             writei(struct inode*, char*, uint, uint);
 void			init_ctable_inodes(uint dev);
 int 			check_inode_container(int cid, int inode);
 void			add_inode_container(int cid, int inode);
-char*			get_container_path(char* path);
+int				get_container_path(char* gloabal_path, char* container_path);
+int 			check_global_file(char* path);
+char*			create_local_copy(char* path);
+void			duplicate(char* path, char* newpath);
 
 // ide.c
 void            ideinit(void);
