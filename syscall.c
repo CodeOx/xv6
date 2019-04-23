@@ -119,6 +119,7 @@ extern int sys_leave_container(void);
 extern int sys_destroy_container(void);
 extern int sys_getcid(void);
 extern int sys_check_inode_container(void);
+// extern int sys_container_malloc(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -158,6 +159,7 @@ static int (*syscalls[])(void) = {
 [SYS_destroy_container] sys_destroy_container,
 [SYS_getcid]  sys_getcid,
 [SYS_check_inode_container] sys_check_inode_container,
+// [SYS_container_malloc] sys_container_malloc,
 
 };
 

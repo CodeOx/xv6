@@ -350,12 +350,22 @@ char*
 uva2ka(pde_t *pgdir, char *uva)
 {
   pte_t *pte;
-
+  // uva=(char*)(((void*)uva)-100);
   pte = walkpgdir(pgdir, uva, 0);
   if((*pte & PTE_P) == 0)
     return 0;
   if((*pte & PTE_U) == 0)
     return 0;
+  // char a='0';
+  // if (uva==(char*)P2V(PTE_ADDR(*pte)))
+  // {
+  //   a=1;
+  // }
+  // panic(&a);
+  // panic("herr");
+  // panic((char*)P2V(PTE_ADDR(*pte)));
+  // cprintf(1,"Mapped uva=%x \n",*uva);
+  // cprintf(1,"Mapped to kva=%x \n",(char*)P2V(PTE_ADDR(*pte)));
   return (char*)P2V(PTE_ADDR(*pte));
 }
 

@@ -41,6 +41,8 @@ struct cont{
   char* name_mapping_out[MAXINODE]; //global filename
   int num_name_mapping;
   int numproc;
+  int cmalloc[8];
+  void* cmalloc_map[8];
 };
 
 struct c_table {
@@ -252,7 +254,7 @@ fork(void)
   np->sig_msg = (char*)kalloc();
   np->local_sense = 0;
   np->amicontainer=0;
-  np->cid=curproc->cid;
+  np->cid=0;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -377,30 +379,56 @@ wait(void)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 int contsched=0;
-
+struct proc *lastproccont[MAXCONT];
 void
 scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  int flag=0;
+  int i;
+  lastproccont[0]=ptable.proc;
   
   for(;;){
     // Enable interrupts on this processor.
     sti();
     acquire(&ptable.lock);
-    
-    for (int i = 0; i < 8; ++i){
-      contsched=(contsched+1)%8;
-      if (ctable.cont[contsched].valid == 1 && ctable.cont[contsched].numproc >0){
-        break;
+    if(flag==0)
+    {
+      for (int i = 0; i < 8; ++i){
+            contsched=(contsched+1)%8;
+            if (ctable.cont[contsched].valid == 1 && ctable.cont[contsched].numproc >0){
+              break;
+            }
       }
     }
-    
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    flag=0;
+    p = lastproccont[contsched];
+
+
+    for(i=0; i<NPROC; i++){
+      p++;
+      if (p == &ptable.proc[NPROC])
+      {
+        p=ptable.proc;
+      }
       if(p->state != RUNNABLE||p->cid!=contsched){
         continue;
       }
+      flag=1;
+      lastproccont[contsched]=p;
+
+      cprintf("container number=%d process number=%d\n", contsched, p->pid );
+
+      
+      for (int i = 0; i < 8; ++i){
+        contsched=(contsched+1)%8;
+          if (ctable.cont[contsched].valid == 1 && ctable.cont[contsched].numproc >0){
+            break;
+          }
+      }
+
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -832,12 +860,21 @@ int create_container(void)
       ctable.cont[i].valid = 1;
       ctable.cont[i].cid = i;
       ctable.cont[i].numproc = 0;
+      lastproccont[i]=ptable.proc;
+      // cprintf("&&&&&&&&&&&&&&&&&&&&&&&&&&&%x\n", ptable.proc);
+      // cprintf("&&&&&&&&&&&&&&&&&&&&&&&&&&&%x\n", lastproccont[i]);
 
       for(int j = 0; j < MAXINODE; j++){
         ctable.cont[i].inodes[j] = ctable.cont[0].inodes[j];
       }
       ctable.cont[i].num_name_mapping = 0;
       cid = i;
+      // ={-1,-1,-1,-1,-1,-1,-1,-1};
+      for (int i = 0; i < 8; ++i)
+      {
+        ctable.cont[i].cmalloc[i]=-1;
+        ctable.cont[cid].cmalloc_map[i]=kalloc();
+      }
       break;
     }
   }
@@ -894,3 +931,24 @@ int destroy_container(int cid)
   release(&ptable.lock);
   return 0;
 }
+
+
+// extern struct proc* myproc(void);
+// extern ctable;
+// int
+// container_malloc(uint nbytes)
+// {
+//   void* allocated=0;
+//   // void* allocated=malloc(nbytes);
+//   int cid=myproc()->cid;
+//   int i=0;
+//   while(ctable.cont[cid].cmalloc[i]!=-1)
+//   {
+//     i++;
+//   }
+  
+//   ctable.cont[cid].cmalloc_map[i]=allocated;
+
+//   return i;
+
+// }

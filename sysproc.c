@@ -174,6 +174,19 @@ sys_getcid(void)
   return myproc()->cid;
 }
 
+// int 
+// sys_container_malloc(void)
+// {
+//   int b;
+//   char*m=malloc(1);
+//   cprint("%c\n",m);
+//   if (argint(0,&b)<0)
+//   {
+//     return -1;
+//   }
+//   return container_malloc(b);
+// }
+
 
 
 //file handling in destroy container
