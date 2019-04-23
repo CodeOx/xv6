@@ -36,4 +36,6 @@
 #define SYS_destroy_container 35
 #define SYS_getcid 36
 #define SYS_check_inode_container 37
+#define SYS_scheduler_log_on 38
+#define SYS_scheduler_log_off 39
 // #define SYS_container_malloc 38

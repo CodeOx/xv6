@@ -39,6 +39,8 @@ int leave_container(void);
 int destroy_container(int a);
 int getcid(void);
 int check_inode_container(int cid, int inode);
+int scheduler_log_on(); 
+int scheduler_log_off(); 
 // int container_malloc(int);
 
 

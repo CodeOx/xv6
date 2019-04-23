@@ -63,10 +63,12 @@ main(int argc ,char* argv[])
 	// ps();
 	if(child == 0){
 		ps();
+		scheduler_log_on();
 		join_container(cid1);
 		// ps();
 		int c1=getpid();
 		printf(1,"pid=%d created\n", c1);
+		scheduler_log_off();
 		for (int i = 0; i < 100; ++i)
 		{
 			i--;

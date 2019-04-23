@@ -27,6 +27,7 @@ struct barrier_type b;
 static struct proc *initproc;
 
 int nextpid = 1;
+int sched_log=0;
 extern void forkret(void);
 extern void trapret(void);
 
@@ -419,7 +420,10 @@ scheduler(void)
       flag=1;
       lastproccont[contsched]=p;
 
-      cprintf("container number=%d process number=%d\n", contsched, p->pid );
+      if(sched_log==1)
+      {
+        cprintf("Container + %d : Scheduling process + %d\n", contsched, p->pid );
+      }
 
       
       for (int i = 0; i < 8; ++i){
@@ -932,6 +936,15 @@ int destroy_container(int cid)
   return 0;
 }
 
+void scheduler_log_on(void)
+{
+  sched_log=1;
+}
+
+void scheduler_log_off(void)
+{
+  sched_log=0;
+}
 
 // extern struct proc* myproc(void);
 // extern ctable;
