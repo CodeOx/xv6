@@ -185,7 +185,6 @@ UPROGS=\
 	_zombie\
 	_print_count\
 	_user_toggle\
-	_user_add\
 	_ps\
 	_multicast_test\
 	_jacob\
@@ -193,8 +192,8 @@ UPROGS=\
 	_cont_mgr\
 	_test_script\
 
-fs.img: mkfs README arr assig2a.inp assig2b.inp $(UPROGS)
-	./mkfs fs.img README arr assig2a.inp assig2b.inp $(UPROGS)
+fs.img: mkfs README $(UPROGS)
+	./mkfs fs.img README $(UPROGS)
 
 -include *.d
 
@@ -259,7 +258,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # check in that version.
 
 EXTRA=\
-	print_count.c user_toggle.c user_add.c ps.c multicast_test.c lock.c lock.h\
+	print_count.c user_toggle.c ps.c multicast_test.c lock.c lock.h\
 	jacob.c maekawa.c\
 	cont_mgr.c\
 	test_script.c\

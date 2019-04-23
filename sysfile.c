@@ -277,6 +277,7 @@ create(char *path, short type, short major, short minor)
     panic("create: dirlink");
 
   add_inode_container(myproc()->cid, ip->inum);
+  //cprintf("create : cid=%d, ip=%d\n", myproc()->cid, ip->inum);
 
   iunlockput(dp);
 
@@ -299,8 +300,12 @@ sys_open(void)
   /* Changes for Copy-on-Write */
   int mapping_exist = get_container_path(path, path);
 
+  if(omode & O_CREATE && (myproc()-> cid != 0) && !(mapping_exist)){
+    path = create_mapping(path);
+  }
+
   if((!(omode & O_CREATE)) && ((omode & O_WRONLY) || (omode & O_RDWR))){
-    if((myproc()-> cid != 0) && check_global_file(path) && !(mapping_exist)){
+    if((myproc()-> cid != 0) && !(mapping_exist)){
       newpath = create_local_copy(path);
       ip = create(newpath, T_FILE, 0, 0);
       if(ip == 0){
@@ -478,4 +483,35 @@ sys_check_inode_container(void)
   }
 
   return check_inode_container(cid, inode);
+}
+
+int
+sys_get_container_path1(void)
+{
+  char *p1, *p2;
+
+  if(argptr(0, &p1, DIRSIZ) < 0 || argptr(0, &p2, 20) < 0)
+    return -1;
+
+  char *temp = p1;
+
+  int n = get_container_path(p1, temp);
+  cprintf("here: %s : %s : %d\n", p1, temp, n);
+  int i = 0;
+  while(temp[i] != '\0'){ p2[i] = temp[i]; i++;}
+  p2[i] = '\0';
+  return n;
+}
+
+int
+sys_get_rev_container_path1(void)
+{
+  char *p1, *p2, *temp = 0;
+
+  if(argptr(0, &p1, DIRSIZ) < 0 || argptr(0, &p2, DIRSIZ) < 0)
+    return -1;
+  int n = get_rev_container_path(p1, temp);
+  int i = 0;
+  while(temp[i] != '\0'){ p2[i] = temp[i]; i++;}
+  return n;
 }

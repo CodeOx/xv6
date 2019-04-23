@@ -794,7 +794,7 @@ int get_rev_container_path(char* container_path, char* global_path){
 
   for(int i = 0; i < ctable.cont[cid].num_name_mapping; i++){
     if(namecmp(ctable.cont[cid].name_mapping_out[i], path) == 0){
-      container_path = ctable.cont[cid].name_mapping_in[i];
+      global_path = ctable.cont[cid].name_mapping_in[i];
       return 1;
     }
   }
@@ -823,6 +823,25 @@ int check_global_file(char* path){
 
   end_op();
   return 0;
+}
+
+char* create_mapping(char* path){
+  int cid = myproc()->cid;
+  int index = ctable.cont[cid].num_name_mapping;
+
+  ctable.cont[cid].name_mapping_in[index] = kalloc();
+  ctable.cont[cid].name_mapping_out[index] = kalloc();
+  strncpy(ctable.cont[cid].name_mapping_in[index], path, DIRSIZ);
+  strncpy(ctable.cont[cid].name_mapping_out[index], path, DIRSIZ);
+  int end = 0;
+  while(ctable.cont[cid].name_mapping_out[index][end] != '\0'){end++;}
+  ctable.cont[cid].name_mapping_out[index][end] = '_';
+  ctable.cont[cid].name_mapping_out[index][end+1] = cid + '0';
+  ctable.cont[cid].name_mapping_out[index][end+2] = '\0';
+  
+  ctable.cont[cid].num_name_mapping++;
+
+  return ctable.cont[cid].name_mapping_out[index];
 }
 
 char* create_local_copy(char* path){
@@ -864,8 +883,6 @@ char* create_local_copy(char* path){
   //cprintf("create_local_copy : new name = %s\n", ctable.cont[cid].name_mapping_out[index]);
 
   return ctable.cont[cid].name_mapping_out[index];
-
-  return 0;
 }
 
 void duplicate(char* path, char* newpath)

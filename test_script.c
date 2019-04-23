@@ -3,6 +3,10 @@
 #include "date.h"
 #include "fcntl.h"
 
+#define MSGSIZE 100
+
+int parentId;
+char* m;
 
 void reverse(char str[], int length) 
 { 
@@ -48,248 +52,253 @@ char* itoa(int num, char* str)
     return str; 
 } 
 
-int
+void child(){
+	int pid = getpid();
+	int cid = getcid();
+	while(1){
+		recv(m);
+		if(m[0] == 'p'){
+			ps();
+		}
+		if(m[0] == 'e'){
+			char filename[10] = "file_0";
+			itoa(pid, filename+6);
+			unlink(filename);
+
+			char filename1[10] = "my_file_1";
+			itoa(cid, filename1+8);
+			unlink(filename1);
+
+			leave_container();
+			exit();
+		}
+		if(m[0] == 'h'){
+			sleep(1);
+			int a = 0;
+			for(int i = 0; i < 100000; i++){
+				for(int j = 0; j < 100000; j++){
+					for(int j = 0; j < 100000; j++){
+						a++;
+					}
+				}
+			}
+			//printf(1, "done heavy pid:%d\n", pid);
+		}
+		if(m[0] == 'l'){
+			if(fork() == 0){
+				join_container(cid);
+				char *argv[] = {"ls", 0};
+				exec("/ls",argv);
+				printf(1, "child : ls exec failed\n");
+				exit();
+			}
+			wait();
+		}
+		if(m[0] == 'c'){
+			char filename[10] = "file_0";
+			itoa(pid, filename+5);
+			int fd = open(filename, O_CREATE);
+			close(fd);
+		}
+		if(m[0] == 'd'){
+			char filename[10] = "my_file";
+			int fd = open(filename, O_CREATE|O_WRONLY);
+			char text[15] = "Modified by: 0";
+			itoa(pid, text+13);
+			write(fd, text, 15);
+			close(fd);
+		}
+		if(m[0] == 't'){
+			if(fork() == 0){
+				join_container(cid);
+				//char temp[20];
+				//printf(1, "%s\n", get_container_path1("my_file", temp));
+				char filename[10] = "my_file_1";
+				itoa(cid, filename+8);
+				char *argv[] = {"cat", filename, 0};
+				exec("/cat",argv);
+				printf(1, "child : cat exec failed\n");
+				exit();
+			}
+			wait();
+		}
+		send(pid, parentId, m);
+	}
+}
+
+int 
 main(int argc ,char* argv[])
 {
-	// ps();
 	int cid1=create_container();
 	int cid2=create_container();
 	int cid3=create_container();
-
-	int fd = open("my_file", O_CREATE);
-	close(fd);
 	
-	int child = fork();
-	// ps();
-	if(child == 0){
-		ps();
-		scheduler_log_on();
+	int child1, child2, child3, child4, child5;
+
+	m = (char*)malloc(MSGSIZE);
+	parentId = getpid();
+
+	/*** Container 1 ***/
+	//Child1
+	if((child1 = fork()) == 0){
 		join_container(cid1);
-		// ps();
-		int c1=getpid();
-		printf(1,"pid=%d created\n", c1);
-		scheduler_log_off();
-		for (int i = 0; i < 100; ++i)
-		{
-			i--;
-		}
-		
-		// // sleep(100);
-		// printf(1,"child 1 container 1\n");
-		// int pid=getpid();
-		// char *spid = (char *)malloc(4);
-  //   	spid=itoa(pid,spid);
-  //   	char s[15]="Modified by:  ";
-  //   	int i=0;
-  //   	while(spid[i]!='\0')
-  //   	{
-  //   		printf(1,"insdie while %c\n", spid[i]);
-  //   		s[i+12]=spid[i];
-  //   		i++;
-  //   	}
-		// ps();
-
-		// fd = open("my_file", O_WRONLY);
-		// // char s
-		// write(fd,s,sizeof(s));
-		// close(fd);
-		// printf(1,"yaha hooo\n");
-
-		// char *argv[2];
-		// argv[0] ="cat";
-		// argv[1] = 0;
-		// if(fork() == 0) 
-		// {
-		// 	printf(1,"inside cat\n");
-		// 	close(0);
-		// 	open("my_file", O_RDONLY);
-		// 	exec("cat", argv);
-		// }
-
-
-		// if(fork() == 0)
-		// {
-		// 	join_container(cid1);
-		// 	printf(1, "ls inside cont 1\n");
-		// 	char *argv[] = {"ls", 0};
-		// 	exec("/ls",argv);
-		// 	printf(1, "child : ls exec failed\n");
-		// }
-
-		leave_container();
-
+		send(getpid(), parentId, m);
+		child();
 		exit();
 	}
 
-
-
-	int child2 = fork();
-	if(child2 == 0)
-	{
+	//Child2
+	if((child2 = fork()) == 0){
 		join_container(cid1);
-		int c2=getpid();
-		printf(1,"pid=%d created\n", c2);
-
-		// printf(1,"child 2 container 1\n" );
-		for (int i = 0; i < 100; ++i)
-		{
-			i--;
-		}
-		leave_container();
-
+		send(getpid(), parentId, m);
+		child();
 		exit();
 	}
 
-	int child3 = fork();
-	if(child3 == 0)
-	{
+	//Child3
+	if((child3 = fork()) == 0){
 		join_container(cid1);
-		int c3=getpid();
-
-		printf(1,"pid=%d created\n", c3);
-
-		// printf(1,"child 2 container 1\n" );
-		// sleep(100);
-		for (int i = 0; i < 100; ++i)
-		{
-			i--;
-		}
-		leave_container();
-
+		send(getpid(), parentId, m);
+		child();
 		exit();
 	}
 
-
-	if(fork() == 0)
-	{
+	/*** Container 2 ***/
+	//Child1
+	if((child4 = fork()) == 0){
 		join_container(cid2);
-		int c4=getpid();
-
-		printf(1,"pid=%d created\n", c4);
-
-		// printf(1,"child in container 2\n" );
-		// ps();
-		for (int i = 0; i < 100; ++i)
-		{
-			i--;
-		}
-		leave_container();
-
+		send(getpid(), parentId, m);
+		child();
 		exit();
 	}
 
+	/*** Container 3 ***/
+	//Child1
+	if((child5 = fork()) == 0){
+		join_container(cid3);
+		send(getpid(), parentId, m);
+		child();
+		exit();
+	}
 
-	// int child3 = fork();
-	// if(child3 == 0)
-	// {
-	// 	join_container(cid1);
+	/* All child process joined container */
+	for(int i = 0; i < 5; i++){
+		recv(m);
+	}
 
-	// 	leave_container();
+	/* All lead child to do ps */
+	m[0] = 'p';
+	send(parentId, child1, m);
+	send(parentId, child4, m);
+	send(parentId, child5, m);
 
-	// 	exit();
-	// }
+	recv(m);
+	recv(m);
+	recv(m);
 
-	// int child4 = fork();
-	// if(child4 == 0)
-	// {
-	// 	join_container(cid2);
+	printf(1, "\n");
 
+	/* Scheduler logs */
+	m[0] = 'h';
+	send(parentId, child1, m);
+	send(parentId, child2, m);
+	send(parentId, child3, m);
+	send(parentId, child4, m);
+	send(parentId, child5, m);
 
+	scheduler_log_on();
+	sleep(2);
+	scheduler_log_off();
 
-	// 	int pid=getpid();
-	// 	char *spid = (char *)malloc(4);
- //    	spid=itoa(pid,spid);
- //    	char s[15]="Modified by:  ";
- //    	int i=0;
- //    	while(spid[i]!='\0')
- //    	{
- //    		s[i+12]=spid[i];
- //    	}
-	// 	ps();
+	for(int i = 0; i < 5; i++){
+		recv(m);
+	}
 
-	// 	fd = open("my_file", O_WRONLY);
-	// 	// char s
-	// 	write(fd,s,sizeof(s));
-	// 	close(fd);
+	printf(1, "\n");
 
+	/* File system test */
+	/* ls() */
+	m[0] = 'l';
+	send(parentId, child1, m);
+	recv(m);
+	send(parentId, child2, m);
+	recv(m);
+	send(parentId, child3, m);
+	recv(m);
+	send(parentId, child4, m);
+	recv(m);
+	send(parentId, child5, m);	
+	recv(m);
 
-	// 	char *argv[2];
-	// 	argv[0] ="cat";
-	// 	argv[1] = 0;
-	// 	if(fork() == 0) 
-	// 	{
-	// 		close(0);
-	// 		open("my_file", O_RDONLY);
-	// 		exec("cat", argv);
-	// 	}
+	printf(1, "\n");
 
-	// 	leave_container();
+	/* create file file_pid */
+	m[0] = 'c';
+	send(parentId, child1, m);
+	send(parentId, child2, m);
+	send(parentId, child3, m);
+	send(parentId, child4, m);
+	send(parentId, child5, m);
 
-	// 	exit();
-	// }
+	for(int i = 0; i < 5; i++){
+		recv(m);
+	}
 
+	printf(1, "created files\n\n");	
 
-	// int child5 = fork();
-	// if(child5 == 0)
-	// {
-	// 	join_container(cid3);
+	/* ls() */
+	m[0] = 'l';
+	send(parentId, child1, m);
+	recv(m);
+	send(parentId, child2, m);
+	recv(m);
+	send(parentId, child3, m);
+	recv(m);
+	send(parentId, child4, m);
+	recv(m);
+	send(parentId, child5, m);	
+	recv(m);
 
-	// 	int pid=getpid();
-	// 	char *spid = (char *)malloc(4);
- //    	spid=itoa(pid,spid);
- //    	char s[15]="Modified by:  ";
- //    	int i=0;
- //    	while(spid[i]!='\0')
- //    	{
- //    		s[i+12]=spid[i];
- //    	}
-	// 	ps();
+	printf(1, "\n");
 
-	// 	fd = open("my_file", O_WRONLY);
-	// 	// char s
-	// 	write(fd,s,sizeof(s));
-	// 	close(fd);
+	/* create my_file */
+	m[0] = 'd';
+	send(parentId, child1, m);
+	send(parentId, child4, m);
+	send(parentId, child5, m);
 
+	recv(m);
+	recv(m);
+	recv(m);
 
-	// 	char *argv[2];
-	// 	argv[0] ="cat";
-	// 	argv[1] = 0;
-	// 	if(fork() == 0) 
-	// 	{
-	// 		close(0);
-	// 		open("my_file", O_RDONLY);
-	// 		exec("cat", argv);
-	// 	}
+	printf(1, "created my_file\n\n");	
 
-	// 	leave_container();
-	// 	exit();
-	// }
-	
-	// wait();
-	// wait();
-	// wait();
-	// wait();
-	// wait(); //all child processes exit, destroy container now
+	/* cat */
+	m[0] = 't';
+	send(parentId, child1, m);
+	recv(m);
+	send(parentId, child4, m);
+	recv(m);
+	send(parentId, child5, m);
+	recv(m);
 
-	// int c = fork();
-	// if(c == 0){
-	// 	printf(1, "ls inside cont 0\n");
-	// 	char *argv[] = {"ls", 0};
-	// 	exec("/ls",argv);
-	// 	printf(1, "child : ls exec failed\n");
-	// }
+	printf(1, "\n");
 
+	/* All child to exit */
+	m[0] = 'e';
+	send(parentId, child1, m);
+	send(parentId, child2, m);
+	send(parentId, child3, m);
+	send(parentId, child4, m);
+	send(parentId, child5, m);
 
-	wait();
-	wait();
-	wait();
-	wait();
+	for(int i = 0; i < 5; i++){
+		wait();
+	}
 
 	destroy_container(cid1);
 	destroy_container(cid2);
 	destroy_container(cid3);
-	//unlink("yohoooooooo");
-
 
 	exit();
 }

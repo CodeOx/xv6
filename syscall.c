@@ -121,7 +121,8 @@ extern int sys_getcid(void);
 extern int sys_check_inode_container(void);
 extern int sys_scheduler_log_on(void);
 extern int sys_scheduler_log_off(void);
-
+extern int sys_get_container_path1(void);
+extern int sys_get_rev_container_path1(void);
 
 // extern int sys_container_malloc(void);
 
@@ -165,6 +166,8 @@ static int (*syscalls[])(void) = {
 [SYS_check_inode_container] sys_check_inode_container,
 [SYS_scheduler_log_on] sys_scheduler_log_on,
 [SYS_scheduler_log_off] sys_scheduler_log_off,
+[SYS_get_container_path1] sys_get_container_path1,
+[SYS_get_rev_container_path1] sys_get_rev_container_path1,
 // [SYS_container_malloc] sys_container_malloc,
 
 };

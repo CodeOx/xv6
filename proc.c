@@ -660,6 +660,7 @@ ps(void)
 
   acquire(&ptable.lock);
 
+  cprintf("container:%d\n", cid);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->cid == cid && (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING))
       cprintf("pid:%d name:%s\n", p->pid, p->name);
@@ -687,7 +688,7 @@ send(void)
   for(temp = ptable.proc; temp < &ptable.proc[NPROC]; temp++){
     if(temp->pid == sender_pid && temp->state == UNUSED){
       release(&ptable.lock);
-      cprintf("send: invalid sender id\n");
+      cprintf("send: invalid sender id : %d\n", sender_pid);
       return -2;    //invalid sender_id
     }
     if(temp->pid == rec_pid){
@@ -865,15 +866,13 @@ int create_container(void)
       ctable.cont[i].cid = i;
       ctable.cont[i].numproc = 0;
       lastproccont[i]=ptable.proc;
-      // cprintf("&&&&&&&&&&&&&&&&&&&&&&&&&&&%x\n", ptable.proc);
-      // cprintf("&&&&&&&&&&&&&&&&&&&&&&&&&&&%x\n", lastproccont[i]);
 
       for(int j = 0; j < MAXINODE; j++){
         ctable.cont[i].inodes[j] = ctable.cont[0].inodes[j];
       }
       ctable.cont[i].num_name_mapping = 0;
       cid = i;
-      // ={-1,-1,-1,-1,-1,-1,-1,-1};
+
       for (int i = 0; i < 8; ++i)
       {
         ctable.cont[i].cmalloc[i]=-1;

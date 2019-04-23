@@ -38,4 +38,6 @@
 #define SYS_check_inode_container 37
 #define SYS_scheduler_log_on 38
 #define SYS_scheduler_log_off 39
+#define SYS_get_container_path1 40
+#define SYS_get_rev_container_path1 41
 // #define SYS_container_malloc 38
