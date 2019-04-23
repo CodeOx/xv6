@@ -75,6 +75,8 @@ exec(char *path, char **argv)
     sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
     if(copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
       goto bad;
+    // cprintf("*******************%d\n",sp);
+
     ustack[3+argc] = sp;
   }
   ustack[3+argc] = 0;
@@ -86,6 +88,7 @@ exec(char *path, char **argv)
   sp -= (3+argc+1) * 4;
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
     goto bad;
+  // cprintf("%d\n",sp);
 
   // Save program name for debugging.
   for(last=s=path; *s; s++)

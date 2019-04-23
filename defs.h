@@ -140,6 +140,8 @@ int 			join_container(int);
 int 			leave_container(void);
 int 			destroy_container(int);
 void            cinit(void);
+void 			scheduler_log_on(void);
+void 			scheduler_log_off(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

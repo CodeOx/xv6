@@ -687,6 +687,8 @@ struct cont{
   char* name_mapping_out[MAXINODE]; //global filename
   int num_name_mapping;
   int numproc;
+  int cmalloc[8];
+  void* cmalloc_map[8];
 };
 
 struct c_table {
