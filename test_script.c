@@ -111,11 +111,7 @@ void child(){
 		if(m[0] == 't'){
 			if(fork() == 0){
 				join_container(cid);
-				//char temp[20];
-				//printf(1, "%s\n", get_container_path1("my_file", temp));
-				char filename[10] = "my_file_1";
-				itoa(cid, filename+8);
-				char *argv[] = {"cat", filename, 0};
+				char *argv[] = {"cat", "my_file", 0};
 				exec("/cat",argv);
 				printf(1, "child : cat exec failed\n");
 				exit();

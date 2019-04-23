@@ -759,7 +759,7 @@ void add_inode_container(int cid, int inode){
   //cprintf("add inode : %d cont : %d\n", inode, cid);
 }
 
-int get_container_path(char* global_path, char* container_path){
+int get_container_path(char* global_path, char** container_path){
   int cid = myproc()->cid;
   char* path = global_path;
 
@@ -775,7 +775,8 @@ int get_container_path(char* global_path, char* container_path){
     //cprintf("%d\n", namecmp(ctable.cont[cid].name_mapping_in[i], path));
 
     if(namecmp(ctable.cont[cid].name_mapping_in[i], path) == 0){
-      container_path = ctable.cont[cid].name_mapping_out[i];
+      *container_path = ctable.cont[cid].name_mapping_out[i];
+      //cprintf("inside : %s : %s : %s\n", global_path, ctable.cont[cid].name_mapping_out[i], container_path);
       return 1;
     }
   }
@@ -783,7 +784,7 @@ int get_container_path(char* global_path, char* container_path){
   return 0;
 }
 
-int get_rev_container_path(char* container_path, char* global_path){
+int get_rev_container_path(char* container_path, char** global_path){
   int cid = myproc()->cid;
   char* path = container_path;
 
@@ -794,7 +795,7 @@ int get_rev_container_path(char* container_path, char* global_path){
 
   for(int i = 0; i < ctable.cont[cid].num_name_mapping; i++){
     if(namecmp(ctable.cont[cid].name_mapping_out[i], path) == 0){
-      global_path = ctable.cont[cid].name_mapping_in[i];
+      *global_path = ctable.cont[cid].name_mapping_in[i];
       return 1;
     }
   }

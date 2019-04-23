@@ -70,8 +70,11 @@ ls(char *path)
         printf(1, "ls: cannot stat %s\n", buf);
         continue;
       }
-      if(check_inode_container(cid, st.ino))
-        printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+      if(check_inode_container(cid, st.ino)){
+        char temp[20];
+        get_rev_container_path1(buf+2, temp, 20);
+        printf(1, "%s %d %d %d\n", fmtname(temp), st.type, st.ino, st.size);
+      }
     }
     break;
   }

@@ -41,8 +41,8 @@ int getcid(void);
 int check_inode_container(int cid, int inode);
 int scheduler_log_on(); 
 int scheduler_log_off(); 
-int get_container_path1(char* global_path, char* container_path);
-int get_rev_container_path1(char* container_path, char* global_path);
+int get_container_path1(char* global_path, char* container_path, int n);
+int get_rev_container_path1(char* container_path, char* global_path, int n);
 // int container_malloc(int);
 
 

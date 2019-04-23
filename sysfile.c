@@ -298,7 +298,8 @@ sys_open(void)
   begin_op();
 
   /* Changes for Copy-on-Write */
-  int mapping_exist = get_container_path(path, path);
+  int mapping_exist = get_container_path(path, &path);
+  //cprintf("open : %s\n", path);
 
   if(omode & O_CREATE && (myproc()-> cid != 0) && !(mapping_exist)){
     path = create_mapping(path);
@@ -489,29 +490,36 @@ int
 sys_get_container_path1(void)
 {
   char *p1, *p2;
+  int n;
 
-  if(argptr(0, &p1, DIRSIZ) < 0 || argptr(0, &p2, 20) < 0)
+  if(argint(2, &n) < 0 || argptr(0, &p1, n) < 0 || argptr(1, &p2, n) < 0)
     return -1;
 
-  char *temp = p1;
+  char *temp = "";
 
-  int n = get_container_path(p1, temp);
-  cprintf("here: %s : %s : %d\n", p1, temp, n);
+  int ret = get_container_path(p1, &temp);
   int i = 0;
   while(temp[i] != '\0'){ p2[i] = temp[i]; i++;}
   p2[i] = '\0';
-  return n;
+
+  return ret;
 }
 
 int
 sys_get_rev_container_path1(void)
 {
-  char *p1, *p2, *temp = 0;
+  char *p1, *p2;
+  int n;
 
-  if(argptr(0, &p1, DIRSIZ) < 0 || argptr(0, &p2, DIRSIZ) < 0)
+  if(argint(2, &n) < 0 || argptr(0, &p1, DIRSIZ) < 0 || argptr(1, &p2, DIRSIZ) < 0)
     return -1;
-  int n = get_rev_container_path(p1, temp);
+
+  char *temp = p1;
+
+  int ret = get_rev_container_path(p1, &temp);
   int i = 0;
   while(temp[i] != '\0'){ p2[i] = temp[i]; i++;}
-  return n;
+  p2[i] = '\0';
+
+  return ret;
 }
