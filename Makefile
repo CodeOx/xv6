@@ -190,7 +190,7 @@ UPROGS=\
 	_jacob\
 	_maekawa\
 	_cont_mgr\
-	_test_script\
+	_user_test_assig3\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -261,7 +261,7 @@ EXTRA=\
 	print_count.c user_toggle.c ps.c multicast_test.c lock.c lock.h\
 	jacob.c maekawa.c\
 	cont_mgr.c\
-	test_script.c\
+	user_test_assig3.c\
 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c\
