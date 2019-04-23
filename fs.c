@@ -781,6 +781,25 @@ int get_container_path(char* global_path, char* container_path){
   return 0;
 }
 
+int get_rev_container_path(char* container_path, char* global_path){
+  int cid = myproc()->cid;
+  char* path = container_path;
+
+  if(ctable.cont[cid].valid == 0){
+    cprintf("get_rev_container_path : invalid container id : %d\n", cid);
+    return 0;
+  }
+
+  for(int i = 0; i < ctable.cont[cid].num_name_mapping; i++){
+    if(namecmp(ctable.cont[cid].name_mapping_out[i], path) == 0){
+      container_path = ctable.cont[cid].name_mapping_in[i];
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 int check_global_file(char* path){
   struct inode *ip;
 

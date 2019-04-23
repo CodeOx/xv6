@@ -56,6 +56,7 @@ void			init_ctable_inodes(uint dev);
 int 			check_inode_container(int cid, int inode);
 void			add_inode_container(int cid, int inode);
 int				get_container_path(char* gloabal_path, char* container_path);
+int				get_rev_container_path(char* container_path, char* gloabal_path);
 int 			check_global_file(char* path);
 char*			create_local_copy(char* path);
 void			duplicate(char* path, char* newpath);
