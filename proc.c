@@ -406,14 +406,20 @@ scheduler(void)
     }
     flag=0;
     p = lastproccont[contsched];
+    // if(contsched!=0)
+    // cprintf("search %d\n", contsched);
 
 
-    for(i=0; i<NPROC; i++){
+    for(i=0; i<NPROC+1; i++){
       p++;
       if (p == &ptable.proc[NPROC])
       {
         p=ptable.proc;
       }
+      // if (p->pid==7 && p->state!=RUNNABLE)
+      // {
+      //   cprintf("*\n");
+      // }
       if(p->state != RUNNABLE||p->cid!=contsched){
         continue;
       }
@@ -425,6 +431,11 @@ scheduler(void)
         cprintf("Container + %d : Scheduling process + %d\n", contsched, p->pid );
       }
 
+      // if (contsched==1)
+      // {
+      //   cprintf("%d %d", ctable.cont[2].valid,ctable.cont[2].numproc);
+      // }
+
       
       for (int i = 0; i < 8; ++i){
         contsched=(contsched+1)%8;
@@ -432,6 +443,11 @@ scheduler(void)
             break;
           }
       }
+
+      // if (contsched==2)
+      // {
+      //   cprintf("hey\n");
+      // }
 
 
       // Switch to chosen process.  It is the process's job
@@ -456,6 +472,7 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
+      break;
     }
     release(&ptable.lock);
 
@@ -927,6 +944,10 @@ int destroy_container(int cid)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->cid == cid){
+      p->killed = 1;
+      // Wake process from sleep if necessary.
+      if(p->state == SLEEPING)
+        p->state = RUNNABLE;
       p->cid = 0;
     }
   }
