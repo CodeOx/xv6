@@ -677,7 +677,7 @@ ps(void)
 
   acquire(&ptable.lock);
 
-  cprintf("container:%d\n", cid);
+  //cprintf("container:%d\n", cid);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->cid == cid && (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING))
       cprintf("pid:%d name:%s\n", p->pid, p->name);

@@ -194,7 +194,7 @@ main(int argc ,char* argv[])
 	recv(m);
 	recv(m);
 
-	printf(1, "\n");
+	//printf(1, "\n");
 
 	/* Scheduler logs */
 	m[0] = 'h';
@@ -213,7 +213,7 @@ main(int argc ,char* argv[])
 		recv(m);
 	}
 
-	printf(1, "\n");
+	//printf(1, "\n");
 
 	/* File system test */
 	/* ls() */
@@ -229,7 +229,7 @@ main(int argc ,char* argv[])
 	send(parentId, child5, m);	
 	recv(m);
 
-	printf(1, "\n");
+	//printf(1, "\n");
 
 	/* create file file_pid */
 	m[0] = 'c';
@@ -243,7 +243,7 @@ main(int argc ,char* argv[])
 		recv(m);
 	}
 
-	printf(1, "created files\n\n");	
+	//printf(1, "created files\n\n");	
 
 	/* ls() */
 	m[0] = 'l';
@@ -258,7 +258,7 @@ main(int argc ,char* argv[])
 	send(parentId, child5, m);	
 	recv(m);
 
-	printf(1, "\n");
+	//printf(1, "\n");
 
 	/* create my_file */
 	m[0] = 'd';
@@ -270,7 +270,7 @@ main(int argc ,char* argv[])
 	recv(m);
 	recv(m);
 
-	printf(1, "created my_file\n\n");	
+	//printf(1, "created my_file\n\n");	
 
 	/* cat */
 	m[0] = 't';
@@ -281,7 +281,7 @@ main(int argc ,char* argv[])
 	send(parentId, child5, m);
 	recv(m);
 
-	printf(1, "\n");
+	//printf(1, "\n");
 
 	/* All child to exit */
 	m[0] = 'e';
