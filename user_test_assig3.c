@@ -73,16 +73,18 @@ void child(){
 			exit();
 		}
 		if(m[0] == 'h'){
-			sleep(1);
+			sleep(2);
 			int a = 0;
-			for(int i = 0; i < 100000; i++){
-				for(int j = 0; j < 100000; j++){
-					for(int j = 0; j < 100000; j++){
+			// printf(1, "start:%d\n", pid);
+
+			for(int i = 0; i < 400000; i++){
+				for(int j = 0; j < 400000; j++){
+					for(int j = 0; j < 200000; j++){
 						a++;
 					}
 				}
 			}
-			//printf(1, "done heavy pid:%d\n", pid);
+			// printf(1, "done:%d\n", pid);
 		}
 		if(m[0] == 'l'){
 			if(fork() == 0){
@@ -203,7 +205,8 @@ main(int argc ,char* argv[])
 	send(parentId, child5, m);
 
 	scheduler_log_on();
-	sleep(2);
+	sleep(10);
+	// printf(1,"sleep done\n" );
 	scheduler_log_off();
 
 	for(int i = 0; i < 5; i++){
