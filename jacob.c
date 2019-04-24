@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	filename=argv[1];
 	read_input(filename);
 
-	//printf(1, "N=%d,E=%d,T=%d,P=%d,L=%d\n", N, (int)(10000*E), (int)T, P, L);
+	printf(1, "N=%d,E=%d,T=%d,P=%d,L=%d\n", N, (int)(10000*E), (int)T, P, L);
 
 	volatile float diff;
 	int i,j;
